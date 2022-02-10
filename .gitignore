@@ -1,0 +1,12 @@
+*.swo
+*.swp
+~*
+.DS_Store
+.vs/
+.vscode/
+.idea/
+*.exe
+testdata/
+
+/cmd/demo/demo
+/cmd/demo/demo.exe
