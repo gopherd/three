@@ -9,17 +9,27 @@ import (
 
 var nextObjectUUID int64
 
-// Object 定义对象接口
+// Object reprensents object in scene
 type Object interface {
-	isObject()
+	node
 	setParent(parent Object)
-	addChild(child Object) bool
 
 	Type() string      // Type returns type of Object
 	UUID() int64       // UUID returns UUID of Object
 	Tag() string       // Tag returns tag of Object
 	SetTag(tag string) // SetTag sets tag of Object
 	Parent() Object    // Parent returns parent of Object
+
+	Visible() bool                            // Visible reports whether the object is visible
+	Bounds() (min, max math.Vector3, ok bool) // Bounds returns object bounding box
+	Transform() math.Mat4x4                   // Transform returns transform matrix
+
+	// Render renders the Object to `renderer' with specified tranform
+	Render(renderer renderer.Renderer, cameraTransform, transform math.Mat4x4)
+}
+
+type node interface {
+	addChild(child Object) bool
 
 	RemoveChild(child Object) bool     // RemoveChild removes child object
 	RemoveChildByIndex(i int)          // RemoveChildByIndex removes ith child object
@@ -31,18 +41,20 @@ type Object interface {
 	GetChildByTag(tag string) Object  // GetChildByTag retrieves child object by tag
 	GetChildByUUID(uuid int64) Object // GetChildByUUID retrieves child object by uuid
 
-	Transform() math.Mat4x4                                           // Transform returns transform matrix
-	Render(renderer renderer.Renderer, camera, transform math.Mat4x4) // Render renders the Object to `renderer' with specified tranform
+	OnUpdate()
 }
 
-type node struct {
+type node3d struct {
 	children []Object
 	byUUID   map[int64]int
 	byTag    map[string]int
+
+	onChildAdded   func(child Object)
+	onChildRemoved func(child Object)
 }
 
 // addChild implements Object unexported addChild method
-func (node *node) addChild(child Object) bool {
+func (node *node3d) addChild(parent, child Object) bool {
 	if child.Parent() != nil {
 		return false
 	}
@@ -65,8 +77,11 @@ func (node *node) addChild(child Object) bool {
 	return true
 }
 
-func (node *node) removeChild(i int, child Object) {
-	child.setParent(nil)
+func (node *node3d) removeChild(i int, child Object) {
+	parent := child.Parent()
+	if parent != nil {
+		child.setParent(nil)
+	}
 	delete(node.byUUID, child.UUID())
 	if node.byTag != nil {
 		if tag := child.Tag(); tag != "" {
@@ -84,20 +99,23 @@ func (node *node) removeChild(i int, child Object) {
 		}
 	}
 	node.children = node.children[:end]
+	if node.onChildRemoved != nil {
+		node.onChildRemoved(child)
+	}
 }
 
 // RemoveChild implements Object RemoveChild method
-func (node *node) RemoveChild(child Object) bool {
+func (node *node3d) RemoveChild(child Object) bool {
 	return node.RemoveChildByUUID(child.UUID())
 }
 
 // RemoveChildByIndex implements Object RemoveChildByIndex method
-func (node *node) RemoveChildByIndex(i int) {
+func (node *node3d) RemoveChildByIndex(i int) {
 	node.removeChild(i, node.children[i])
 }
 
 // RemoveChildByTag implements Object RemoveChildByTag method
-func (node *node) RemoveChildByTag(tag string) bool {
+func (node *node3d) RemoveChildByTag(tag string) bool {
 	if node.byTag == nil || tag == "" {
 		return false
 	}
@@ -110,7 +128,7 @@ func (node *node) RemoveChildByTag(tag string) bool {
 }
 
 // RemoveChildByUUID implements Object RemoveChildByUUID method
-func (node *node) RemoveChildByUUID(uuid int64) bool {
+func (node *node3d) RemoveChildByUUID(uuid int64) bool {
 	if node.byUUID == nil {
 		return false
 	}
@@ -123,17 +141,17 @@ func (node *node) RemoveChildByUUID(uuid int64) bool {
 }
 
 // NumChild implements Object NumChild method
-func (node *node) NumChild() int {
+func (node *node3d) NumChild() int {
 	return len(node.children)
 }
 
 // GetChildByIndex implements Object GetChildByIndex method
-func (node *node) GetChildByIndex(i int) Object {
+func (node *node3d) GetChildByIndex(i int) Object {
 	return node.children[i]
 }
 
 // GetChildByTag implements Object GetChildByTag method
-func (node *node) GetChildByTag(tag string) Object {
+func (node *node3d) GetChildByTag(tag string) Object {
 	if node.byTag == nil || tag == "" {
 		return nil
 	}
@@ -145,7 +163,7 @@ func (node *node) GetChildByTag(tag string) Object {
 }
 
 // GetChildByUUID implements Object GetChildByUUID method
-func (node *node) GetChildByUUID(uuid int64) Object {
+func (node *node3d) GetChildByUUID(uuid int64) Object {
 	if node.byUUID == nil {
 		return nil
 	}
@@ -156,8 +174,11 @@ func (node *node) GetChildByUUID(uuid int64) Object {
 	return node.children[index]
 }
 
+// OnUpdate implements Object OnUpdate method
+func (node *node3d) OnUpdate() {}
+
 type object3d struct {
-	node
+	node3d
 	parent  Object
 	uuid    int64
 	tag     string
@@ -168,6 +189,7 @@ type object3d struct {
 		vshader string
 		fshader string
 	}
+	visible   bool
 	transform math.Mat4x4
 }
 
@@ -175,9 +197,6 @@ type object3d struct {
 func (obj *object3d) Init() {
 	obj.uuid = atomic.AddInt64(&nextObjectUUID, 1)
 }
-
-// isObject implements Object unexported isObject method
-func (*object3d) isObject() {}
 
 // Type implements Object Type method
 func (obj *object3d) Type() string { return "" }
@@ -197,6 +216,16 @@ func (obj *object3d) Parent() Object { return obj.parent }
 // setParent implements Object unexported setParent method
 func (obj *object3d) setParent(parent Object) {
 	obj.parent = parent
+}
+
+// Visible implements Object Visible method
+func (obj *object3d) Visible() bool {
+	return obj.visible
+}
+
+// SetVisible sets object visible property
+func (obj *object3d) SetVisible(visible bool) {
+	obj.visible = visible
 }
 
 // Transform implements Object Transform method
@@ -219,14 +248,14 @@ func (obj *object3d) lazyInitProgram(renderer renderer.Renderer) error {
 }
 
 // Render implements Object Render method
-func (obj *object3d) Render(renderer renderer.Renderer, cameraTransform, transform math.Mat4x4) {
+func (obj *object3d) Render(renderer renderer.Renderer, camera, transform math.Mat4x4) {
 	if err := obj.lazyInitProgram(renderer); err != nil {
 		println(err.Error())
 	}
 	if obj.program.fail {
 		return
 	}
-	renderer.SetUniform(obj.program.id, "view", cameraTransform)
+	renderer.SetUniform(obj.program.id, "view", camera)
 	renderer.SetUniform(obj.program.id, "transform", transform)
 }
 
@@ -243,4 +272,58 @@ func MustAdd(parent, child Object) {
 		panic("add child failed")
 	}
 	child.setParent(parent)
+}
+
+// TransformToWorld calculates object's transform in world
+func TransformToWorld(obj Object) math.Mat4x4 {
+	var mat = obj.Transform()
+	var parent = obj.Parent()
+	for parent != nil {
+		mat = parent.Transform().Dot(mat)
+		parent = parent.Parent()
+	}
+	return mat
+}
+
+func recursivelyRenderObject(
+	renderer renderer.Renderer,
+	camera Camera,
+	cameraTransform math.Mat4x4,
+	object Object,
+	objectTransform math.Mat4x4,
+) {
+	renderObject(renderer, camera, cameraTransform, object, objectTransform)
+	for i, n := 0, object.NumChild(); i < n; i++ {
+		child := object.GetChildByIndex(i)
+		if !child.Visible() {
+			continue
+		}
+		childTransform := objectTransform.Dot(child.Transform())
+		recursivelyRenderObject(renderer, camera, cameraTransform, child, childTransform)
+	}
+}
+
+func renderObject(
+	renderer renderer.Renderer,
+	camera Camera,
+	cameraTransform math.Mat4x4,
+	object Object,
+	objectTransform math.Mat4x4,
+) {
+	min, max, ok := object.Bounds()
+	if ok {
+		min = objectTransform.DotVec3(min)
+		max = objectTransform.DotVec3(max)
+		if !camera.ContainsBox(cameraTransform, min, max) {
+			return
+		}
+	}
+	object.Render(renderer, cameraTransform, objectTransform)
+}
+
+func recursivelyUpdateNode(node node) {
+	node.OnUpdate()
+	for i, n := 0, node.NumChild(); i < n; i++ {
+		recursivelyUpdateNode(node.GetChildByIndex(i))
+	}
 }

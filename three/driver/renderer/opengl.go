@@ -6,17 +6,18 @@ import (
 	"unsafe"
 
 	"github.com/go-gl/gl/v3.3-core/gl"
+
 	"github.com/gopherd/threego/three/math"
 )
 
-type OpenGLRenderer struct {
+type openglRenderer struct {
 }
 
-func NewOpenGLRenderer() *OpenGLRenderer {
-	return &OpenGLRenderer{}
+func OpenGLRenderer() *openglRenderer {
+	return &openglRenderer{}
 }
 
-func (OpenGLRenderer) Init(width, height int) error {
+func (openglRenderer) Init(width, height int) error {
 	if err := gl.Init(); err != nil {
 		return err
 	}
@@ -24,18 +25,18 @@ func (OpenGLRenderer) Init(width, height int) error {
 	return nil
 }
 
-func (OpenGLRenderer) Viewport(x, y, w, h int32) {
+func (openglRenderer) Viewport(x, y, w, h int32) {
 	gl.Viewport(x, y, w, h)
 }
 
-func (OpenGLRenderer) ClearColor(r, g, b, a float32) {
+func (openglRenderer) ClearColor(r, g, b, a float32) {
 	gl.ClearColor(r, g, b, a)
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 }
 
-func createShader(shaderType int, source string) (uint32, error) {
+func createShader(shaderType uint32, source string) (uint32, error) {
 	var success int32
-	var shaderId = gl.CreateShader(uint32(shaderType))
+	var shaderId = gl.CreateShader(shaderType)
 	var ptr = (*byte)(unsafe.Pointer(&source))
 	gl.ShaderSource(shaderId, 1, &ptr, nil)
 	gl.CompileShader(shaderId)
@@ -50,7 +51,7 @@ func createShader(shaderType int, source string) (uint32, error) {
 	return 0, errors.New(string(buf[:n]))
 }
 
-func (OpenGLRenderer) CreateProgram(vshader, fshader string) (uint32, error) {
+func (openglRenderer) CreateProgram(vshader, fshader string) (uint32, error) {
 	var (
 		vshaderId uint32
 		fshaderId uint32
@@ -72,7 +73,7 @@ func (OpenGLRenderer) CreateProgram(vshader, fshader string) (uint32, error) {
 	return program, nil
 }
 
-func (OpenGLRenderer) LinkProgram(program uint32) error {
+func (openglRenderer) LinkProgram(program uint32) error {
 	gl.LinkProgram(program)
 	var success int32
 	gl.GetProgramiv(program, gl.LINK_STATUS, &success)
@@ -86,7 +87,7 @@ func (OpenGLRenderer) LinkProgram(program uint32) error {
 	return errors.New(string(buf[:n]))
 }
 
-func (OpenGLRenderer) SetUniform(program uint32, name string, uniform Uniform) {
+func (openglRenderer) SetUniform(program uint32, name string, uniform Uniform) {
 	var location = gl.GetUniformLocation(program, (*byte)(unsafe.Pointer(&name)))
 	switch value := uniform.(type) {
 	case int:
@@ -158,15 +159,15 @@ func (OpenGLRenderer) SetUniform(program uint32, name string, uniform Uniform) {
 	case [2]float32:
 		gl.Uniform2f(location, value[0], value[1])
 	case math.Vector2:
-		gl.Uniform2f(location, value.X, value.Y)
+		gl.Uniform2f(location, value.X(), value.Y())
 	case [3]float32:
 		gl.Uniform3f(location, value[0], value[1], value[2])
 	case math.Vector3:
-		gl.Uniform3f(location, value.X, value.Y, value.Z)
+		gl.Uniform3f(location, value.X(), value.Y(), value.Z())
 	case [4]float32:
 		gl.Uniform4f(location, value[0], value[1], value[2], value[3])
 	case math.Vector4:
-		gl.Uniform4f(location, value.X, value.Y, value.Z, value.W)
+		gl.Uniform4f(location, value.X(), value.Y(), value.Z(), value.W())
 	case float64:
 		gl.Uniform1d(location, value)
 	case [2]float64:

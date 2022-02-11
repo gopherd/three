@@ -8,6 +8,7 @@ import (
 // Camera represents camera object
 type Camera interface {
 	Object
+	ContainsBox(transform math.Mat4x4, min, max math.Vector3) bool
 }
 
 // PerspectiveCamera implemets perspective camera
@@ -24,6 +25,16 @@ func NewPerspectiveCamera() *PerspectiveCamera {
 	return camera
 }
 
-// Render implements Object Render method
+// TODO(delay) Bounds implements Object Bounds method
+func (camera *PerspectiveCamera) Bounds() (min, max math.Vector3, ok bool) {
+	return
+}
+
+// TODO(delay) Render implements Object Render method
 func (camera *PerspectiveCamera) Render(renderer renderer.Renderer, cameraTransform, transform math.Mat4x4) {
+}
+
+// TODO(delay) ContainsBox implements Camera ContainsBox method
+func (camera *PerspectiveCamera) ContainsBox(transform math.Mat4x4, min, max math.Vector3) bool {
+	return true
 }

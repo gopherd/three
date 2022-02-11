@@ -6,15 +6,15 @@ import (
 	"github.com/gopherd/threego/three/driver/renderer"
 )
 
-type GLFWindow struct {
+type glfwindow struct {
 	window *glfw.Window
 }
 
-func NewGLFWindow() *GLFWindow {
-	return &GLFWindow{}
+func GLFWindow() Window {
+	return &GLFWindo{}
 }
 
-func (w *GLFWindow) Init(renderer renderer.Renderer, title string, width, height int) error {
+func (w *glfwindow) Init(renderer renderer.Renderer, title string, width, height int) error {
 	if err := glfw.Init(); err != nil {
 		return err
 	}
@@ -30,15 +30,15 @@ func (w *GLFWindow) Init(renderer renderer.Renderer, title string, width, height
 	return nil
 }
 
-func (w *GLFWindow) Terminate() {
+func (w *glfwindow) Terminate() {
 	glfw.Terminate()
 }
 
-func (w *GLFWindow) Update() {
+func (w *glfwindow) Update() {
 	w.window.SwapBuffers()
 	glfw.PollEvents()
 }
 
-func (w *GLFWindow) ShouldClose() bool {
+func (w *glfwindow) ShouldClose() bool {
 	return w.window.ShouldClose()
 }

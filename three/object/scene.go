@@ -5,21 +5,41 @@ import (
 	"github.com/gopherd/threego/three/math"
 )
 
-type Scene struct {
+type Scene interface {
 	node
+	Render(renderer renderer.Renderer, camera Camera)
+
+	OnEnter()
+	OnExit()
 }
 
-func (scene *Scene) Render(renderer renderer.Renderer, camera Camera) {
-	cameraTransform := camera.Transform()
+// Update updates scene
+func Update(scene Scene) {
+	recursivelyUpdateNode(scene)
+}
+
+var _ Scene = (*BasicScene)(nil)
+
+type BasicScene struct {
+	node3d
+	background math.Vector4
+}
+
+// Render implements Scene Render method
+func (scene *BasicScene) Render(renderer renderer.Renderer, camera Camera) {
+	var background = scene.background
+	renderer.ClearColor(background.R(), background.G(), background.B(), background.A())
+	var cameraTransform = TransformToWorld(camera)
 	for _, child := range scene.children {
-		recursivelyRenderObject(renderer, cameraTransform, child.Transform(), child)
+		if !child.Visible() {
+			continue
+		}
+		recursivelyRenderObject(renderer, camera, cameraTransform, child, child.Transform())
 	}
 }
 
-func recursivelyRenderObject(renderer renderer.Renderer, camera, transform math.Mat4x4, obj Object) {
-	obj.Render(renderer, camera, transform)
-	for i, n := 0, obj.NumChild(); i < n; i++ {
-		child := obj.GetChildByIndex(i)
-		recursivelyRenderObject(renderer, camera, transform.Mul(child.Transform()), child)
-	}
-}
+// OnEnter implements Scene OnEnter method
+func (scene *BasicScene) OnEnter() {}
+
+// OnExit implements Scene OnExit method
+func (scene *BasicScene) OnExit() {}
