@@ -13,13 +13,9 @@ func Vec4(x, y, z, w float32) Vector4 {
 }
 
 func Color(c color.Color) Vector4 {
-	r, g, b, a := c.RGBA()
-	return Vec4(
-		float32(r)/0xffff,
-		float32(g)/0xffff,
-		float32(b)/0xffff,
-		float32(a)/0xffff,
-	)
+	const max = 0xffff
+	var r, g, b, a = c.RGBA()
+	return Vec4(float32(r)/max, float32(g)/max, float32(b)/max, float32(a)/max)
 }
 
 func (vec Vector4) X() float32 { return vec[0] }

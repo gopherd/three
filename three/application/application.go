@@ -13,12 +13,14 @@ type Application struct {
 	camera   object.Camera
 }
 
-func New() *Application {
-	return &Application{}
+var app = new(Application)
+
+func Get() *Application {
+	return app
 }
 
 // Init implements three.Application Init method
-func (app *Application) Init(window window.Window, renderder renderer.Renderer) error {
+func (app *Application) Init(window window.Window, renderer renderer.Renderer) error {
 	app.window = window
 	app.renderer = renderer
 	return nil
@@ -26,6 +28,10 @@ func (app *Application) Init(window window.Window, renderder renderer.Renderer) 
 
 // Shutdown implements three.Application Shutdown method
 func (app *Application) Shutdown() {
+	if n := len(app.scenes); n > 0 {
+		app.scenes[n-1].OnExit()
+		app.scenes = app.scenes[:0]
+	}
 }
 
 // Update implements three.Application Update method

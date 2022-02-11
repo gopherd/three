@@ -11,7 +11,7 @@ type glfwindow struct {
 }
 
 func GLFWindow() Window {
-	return &GLFWindo{}
+	return &glfwindow{}
 }
 
 func (w *glfwindow) Init(renderer renderer.Renderer, title string, width, height int) error {

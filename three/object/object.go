@@ -54,7 +54,7 @@ type node3d struct {
 }
 
 // addChild implements Object unexported addChild method
-func (node *node3d) addChild(parent, child Object) bool {
+func (node *node3d) addChild(child Object) bool {
 	if child.Parent() != nil {
 		return false
 	}

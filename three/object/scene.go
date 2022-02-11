@@ -38,6 +38,10 @@ func (scene *BasicScene) Render(renderer renderer.Renderer, camera Camera) {
 	}
 }
 
+func (scene *BasicScene) SetBackground(color math.Vector4) {
+	scene.background = color
+}
+
 // OnEnter implements Scene OnEnter method
 func (scene *BasicScene) OnEnter() {}
 
