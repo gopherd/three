@@ -2,7 +2,5 @@ github.com/go-gl/gl v0.0.0-20211210172815-726fda9656d6 h1:zDw5v7qm4yH7N8C8uWd+8I
 github.com/go-gl/gl v0.0.0-20211210172815-726fda9656d6/go.mod h1:9YTyiznxEY1fVinfM7RvRcjRHbw2xLBJ3AAGIT0I4Nw=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20211213063430-748e38ca8aec h1:3FLiRYO6PlQFDpUU7OEFlWgjGD1jnBIVSJ5SYRWk+9c=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20211213063430-748e38ca8aec/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
-github.com/gopherd/doge v0.1.0 h1:WlK0AHevcrR2BoOvtRwUGOPfiAk2iIHoZ/4A1O4uFFA=
-github.com/gopherd/doge v0.1.0/go.mod h1:dCrNxDS8bRR/FR9CwPa8rwWSqihrg/ryBLkwobSuVo0=
 github.com/gopherd/doge v0.1.1 h1:FT9uf9+jVk4QHoNtkgsLgSGnUxL4621ppwuoGLaX/IA=
 github.com/gopherd/doge v0.1.1/go.mod h1:dCrNxDS8bRR/FR9CwPa8rwWSqihrg/ryBLkwobSuVo0=
