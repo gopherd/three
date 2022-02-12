@@ -21,24 +21,36 @@ type Application interface {
 }
 
 type Options struct {
-	Title    string
-	Width    int
-	Height   int
+	Title  string
+	Width  int
+	Height int
+
 	Window   window.Window
 	Renderer renderer.Renderer
+
+	Start func()
 }
 
-func DefaultOptions(title string) Options {
-	return Options{
-		Title:    title,
-		Width:    800,
-		Height:   600,
-		Window:   window.GLFWindow(),
-		Renderer: renderer.OpenGLRenderer(),
+func (options *Options) init() {
+	if options.Title == "" {
+		options.Title = "Title"
+	}
+	if options.Width <= 0 {
+		options.Width = 800
+	}
+	if options.Height <= 0 {
+		options.Height = 600
+	}
+	if options.Window == nil {
+		options.Window = window.GLFWindow()
+	}
+	if options.Renderer == nil {
+		options.Renderer = renderer.OpenGLRenderer()
 	}
 }
 
 func Run(app Application, options Options) {
+	options.init()
 	if err := options.Window.Init(
 		options.Renderer,
 		options.Title,
@@ -65,6 +77,10 @@ func Run(app Application, options Options) {
 		<-sig
 		atomic.StoreInt32(&quit, 1)
 	}()
+
+	if options.Start != nil {
+		options.Start()
+	}
 
 	for !options.Window.ShouldClose() && atomic.LoadInt32(&quit) == 0 {
 		app.Update()

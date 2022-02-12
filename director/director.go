@@ -1,88 +1,109 @@
 package director
 
 import (
+	"time"
+
+	"github.com/gopherd/three/boot"
 	"github.com/gopherd/three/driver/renderer"
 	"github.com/gopherd/three/driver/window"
 	"github.com/gopherd/three/object"
 )
 
-type Director struct {
+var director struct {
 	window   window.Window
 	renderer renderer.Renderer
-	scenes   []object.Scene
-	camera   object.Camera
+
+	scenes []object.Scene
+	camera object.Camera
+
+	updatedAt time.Time
+	deltaTime time.Duration
 }
 
-var app = new(Director)
+var Application boot.Application = application{}
 
-func Get() *Director {
-	return app
-}
+type application struct{}
 
 // Init implements boot.Application Init method
-func (app *Director) Init(window window.Window, renderer renderer.Renderer) error {
-	app.window = window
-	app.renderer = renderer
+func (application) Init(window window.Window, renderer renderer.Renderer) error {
+	director.window = window
+	director.renderer = renderer
+	director.updatedAt = time.Now()
 	return nil
 }
 
 // Shutdown implements boot.Application Shutdown method
-func (app *Director) Shutdown() {
-	if n := len(app.scenes); n > 0 {
-		app.scenes[n-1].OnExit()
-		app.scenes = app.scenes[:0]
+func (application) Shutdown() {
+	if n := len(director.scenes); n > 0 {
+		director.scenes[n-1].OnExit()
+		director.scenes = director.scenes[:0]
 	}
 }
 
 // Update implements boot.Application Update method
-func (app *Director) Update() {
-	var scene = app.GetRunningScene()
+func (application) Update() {
+	var now = time.Now()
+	director.deltaTime = now.Sub(director.updatedAt)
+	director.updatedAt = now
+
+	var scene = GetRunningScene()
 	if scene == nil {
 		return
 	}
 	object.Update(scene)
-	if app.camera != nil {
-		scene.Render(app.renderer, app.camera)
+	if director.camera != nil {
+		scene.Render(director.renderer, director.camera)
 	}
 }
 
-func (app *Director) GetCamera() object.Camera {
-	return app.camera
+// DeltaTime returns delta time duration from last update
+func DeltaTime() time.Duration {
+	return director.deltaTime
 }
 
-func (app *Director) SetCamera(camera object.Camera) {
-	app.camera = camera
+// GetCamera returns current camera
+func GetCamera() object.Camera {
+	return director.camera
 }
 
-func (app *Director) GetRunningScene() object.Scene {
-	if n := len(app.scenes); n > 0 {
-		return app.scenes[n-1]
+// SetCamera sets current camera
+func SetCamera(camera object.Camera) {
+	director.camera = camera
+}
+
+// GetRunningScene return the running scene
+func GetRunningScene() object.Scene {
+	if n := len(director.scenes); n > 0 {
+		return director.scenes[n-1]
 	}
 	return nil
 }
 
-func (app *Director) RunScene(scene object.Scene) {
-	if n := len(app.scenes); n > 0 {
-		app.scenes[n-1].OnExit()
-		app.scenes = app.scenes[:0]
+// RunScene runs the scene
+func RunScene(scene object.Scene) {
+	if n := len(director.scenes); n > 0 {
+		director.scenes[n-1].OnExit()
+		director.scenes = director.scenes[:0]
 	}
-	app.PushScene(scene)
+	PushScene(scene)
 }
 
-func (app *Director) PushScene(scene object.Scene) {
-	if n := len(app.scenes); n > 0 {
-		app.scenes[n-1].OnExit()
+// PushScene push and runs the scene
+func PushScene(scene object.Scene) {
+	if n := len(director.scenes); n > 0 {
+		director.scenes[n-1].OnExit()
 	}
-	app.scenes = append(app.scenes, scene)
+	director.scenes = append(director.scenes, scene)
 	scene.OnEnter()
 }
 
-func (app *Director) PopScene(scene object.Scene) {
-	if n := len(app.scenes); n > 0 {
-		app.scenes[n-1].OnExit()
-		app.scenes = app.scenes[:n-1]
+// PopScene pops current running scene and runs previous scene
+func PopScene(scene object.Scene) {
+	if n := len(director.scenes); n > 0 {
+		director.scenes[n-1].OnExit()
+		director.scenes = director.scenes[:n-1]
 		if n > 1 {
-			app.scenes[n-2].OnEnter()
+			director.scenes[n-2].OnEnter()
 		}
 	}
 }

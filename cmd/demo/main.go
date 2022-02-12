@@ -10,9 +10,12 @@ import (
 )
 
 func main() {
-	app := director.Get()
-	app.RunScene(NewScene())
-	boot.Run(app, boot.DefaultOptions("Demo"))
+	boot.Run(director.Application, boot.Options{
+		Title: "Demo",
+		Start: func() {
+			director.RunScene(NewScene())
+		},
+	})
 }
 
 type Scene struct {
@@ -25,7 +28,7 @@ func NewScene() *Scene {
 	scene.SetBackground(core.Vec4(0.2, 0.3, 0.3, 1.0))
 	scene.camera = object.NewPerspectiveCamera()
 	scene.Add(scene.camera)
-	director.Get().SetCamera(scene.camera)
+	director.SetCamera(scene.camera)
 	return scene
 }
 
