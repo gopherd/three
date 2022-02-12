@@ -5,13 +5,18 @@ import (
 	"github.com/gopherd/three/driver/renderer"
 )
 
+// A Scene represents a root node should be rendered
 type Scene interface {
 	node
 
+	// Add adds object to the scene
 	Add(object Object) bool
+	// Render renders the scene by camera to renderer
 	Render(renderer renderer.Renderer, camera Camera)
 
+	// OnEnter callback called on enter the scene
 	OnEnter()
+	// OnExit callback called on exit the scene
 	OnExit()
 }
 
@@ -22,15 +27,18 @@ func Update(scene Scene) {
 
 var _ Scene = (*BasicScene)(nil)
 
+// BasicScene implements a basic Scene
 type BasicScene struct {
 	node3d
 	background core.Vector4
 }
 
+// SetBackground sets the scene background color
 func (scene *BasicScene) SetBackground(color core.Vector4) {
 	scene.background = color
 }
 
+// Add implements Scene Add method
 func (scene *BasicScene) Add(object Object) bool {
 	return scene.addChild(object)
 }
