@@ -159,26 +159,34 @@ func (openglRenderer) SetUniform(program uint32, name string, uniform shader.Uni
 		gl.Uniform1f(location, value)
 	case [2]float32:
 		gl.Uniform2f(location, value[0], value[1])
-	case tensor.Vector2:
+	case tensor.Vector2[float32]:
 		gl.Uniform2f(location, value.X(), value.Y())
 	case [3]float32:
 		gl.Uniform3f(location, value[0], value[1], value[2])
-	case tensor.Vector3:
+	case tensor.Vector3[float32]:
 		gl.Uniform3f(location, value.X(), value.Y(), value.Z())
 	case [4]float32:
 		gl.Uniform4f(location, value[0], value[1], value[2], value[3])
-	case tensor.Vector4:
+	case tensor.Vector4[float32]:
 		gl.Uniform4f(location, value.X(), value.Y(), value.Z(), value.W())
 	case float64:
 		gl.Uniform1d(location, value)
 	case [2]float64:
 		gl.Uniform2d(location, value[0], value[1])
+	case tensor.Vector2[float64]:
+		gl.Uniform2d(location, value.X(), value.Y())
 	case [3]float64:
 		gl.Uniform3d(location, value[0], value[1], value[2])
+	case tensor.Vector3[float64]:
+		gl.Uniform3d(location, value.X(), value.Y(), value.Z())
 	case [4]float64:
 		gl.Uniform4d(location, value[0], value[1], value[2], value[3])
-	case tensor.Mat4x4:
+	case tensor.Vector4[float64]:
+		gl.Uniform4d(location, value.X(), value.Y(), value.Z(), value.W())
+	case tensor.Mat4x4[float32]:
 		gl.UniformMatrix4fv(location, 1, false, &value[0])
+	case tensor.Mat4x4[float64]:
+		gl.UniformMatrix4dv(location, 1, false, &value[0])
 	default:
 		panic(fmt.Sprintf("unsupported uniform type: %T", uniform))
 	}

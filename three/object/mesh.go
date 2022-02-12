@@ -1,8 +1,7 @@
 package object
 
 import (
-	"github.com/gopherd/doge/math/tensor"
-
+	"github.com/gopherd/threego/three/core"
 	"github.com/gopherd/threego/three/driver/renderer"
 	"github.com/gopherd/threego/three/geometry"
 	"github.com/gopherd/threego/three/material"
@@ -17,10 +16,10 @@ type Mesh struct {
 }
 
 // TODO: Bounds implements Object Bounds method
-func (mesh *Mesh) Bounds() (min, max tensor.Vector3, ok bool) {
+func (mesh *Mesh) Bounds() (min, max core.Vector3, ok bool) {
 	return
 }
 
 // TODO: Render implements Object Render method
-func (mesh *Mesh) Render(renderer renderer.Renderer, cameraTransform, transform tensor.Mat4x4) {
+func (mesh *Mesh) Render(renderer renderer.Renderer, cameraTransform, transform core.Mat4x4) {
 }

@@ -3,10 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/gopherd/doge/math/tensor"
-
 	"github.com/gopherd/threego/three"
 	"github.com/gopherd/threego/three/application"
+	"github.com/gopherd/threego/three/core"
 	"github.com/gopherd/threego/three/object"
 )
 
@@ -23,10 +22,10 @@ type Scene struct {
 
 func NewScene() *Scene {
 	scene := new(Scene)
+	scene.SetBackground(core.Vec4(0.2, 0.3, 0.3, 1.0))
 	scene.camera = object.NewPerspectiveCamera()
 	scene.Add(scene.camera)
 	application.Get().SetCamera(scene.camera)
-	scene.SetBackground(tensor.Vec4(0.2, 0.3, 0.3, 1.0))
 	return scene
 }
 

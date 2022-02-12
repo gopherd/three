@@ -3,8 +3,7 @@ package object
 import (
 	"sync/atomic"
 
-	"github.com/gopherd/doge/math/tensor"
-
+	"github.com/gopherd/threego/three/core"
 	"github.com/gopherd/threego/three/driver/renderer"
 )
 
@@ -21,12 +20,12 @@ type Object interface {
 	SetTag(tag string) // SetTag sets tag of Object
 	Parent() Object    // Parent returns parent of Object
 
-	Visible() bool                              // Visible reports whether the object is visible
-	Bounds() (min, max tensor.Vector3, ok bool) // Bounds returns object bounding box
-	Transform() tensor.Mat4x4                   // Transform returns transform matrix
+	Visible() bool                            // Visible reports whether the object is visible
+	Bounds() (min, max core.Vector3, ok bool) // Bounds returns object bounding box
+	Transform() core.Mat4x4                   // Transform returns transform matrix
 
 	// Render renders the Object to `renderer' with specified tranform
-	Render(renderer renderer.Renderer, cameraTransform, transform tensor.Mat4x4)
+	Render(renderer renderer.Renderer, cameraTransform, transform core.Mat4x4)
 }
 
 type node interface {
@@ -191,7 +190,7 @@ type object3d struct {
 		fshader string
 	}
 	visible   bool
-	transform tensor.Mat4x4
+	transform core.Mat4x4
 }
 
 // Init initializes Object
@@ -230,7 +229,7 @@ func (obj *object3d) SetVisible(visible bool) {
 }
 
 // Transform implements Object Transform method
-func (obj *object3d) Transform() tensor.Mat4x4 {
+func (obj *object3d) Transform() core.Mat4x4 {
 	return obj.transform
 }
 
@@ -249,7 +248,7 @@ func (obj *object3d) lazyInitProgram(renderer renderer.Renderer) error {
 }
 
 // Render implements Object Render method
-func (obj *object3d) Render(renderer renderer.Renderer, camera, transform tensor.Mat4x4) {
+func (obj *object3d) Render(renderer renderer.Renderer, camera, transform core.Mat4x4) {
 	if err := obj.lazyInitProgram(renderer); err != nil {
 		println(err.Error())
 	}
@@ -270,7 +269,7 @@ func Attatch(parent, child Object) bool {
 }
 
 // TransformToWorld calculates object's transform in world
-func TransformToWorld(obj Object) tensor.Mat4x4 {
+func TransformToWorld(obj Object) core.Mat4x4 {
 	var mat = obj.Transform()
 	var parent = obj.Parent()
 	for parent != nil {
@@ -283,9 +282,9 @@ func TransformToWorld(obj Object) tensor.Mat4x4 {
 func recursivelyRenderObject(
 	renderer renderer.Renderer,
 	camera Camera,
-	cameraTransform tensor.Mat4x4,
+	cameraTransform core.Mat4x4,
 	object Object,
-	objectTransform tensor.Mat4x4,
+	objectTransform core.Mat4x4,
 ) {
 	renderObject(renderer, camera, cameraTransform, object, objectTransform)
 	for i, n := 0, object.NumChild(); i < n; i++ {
@@ -301,9 +300,9 @@ func recursivelyRenderObject(
 func renderObject(
 	renderer renderer.Renderer,
 	camera Camera,
-	cameraTransform tensor.Mat4x4,
+	cameraTransform core.Mat4x4,
 	object Object,
-	objectTransform tensor.Mat4x4,
+	objectTransform core.Mat4x4,
 ) {
 	min, max, ok := object.Bounds()
 	if ok {

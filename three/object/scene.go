@@ -1,8 +1,7 @@
 package object
 
 import (
-	"github.com/gopherd/doge/math/tensor"
-
+	"github.com/gopherd/threego/three/core"
 	"github.com/gopherd/threego/three/driver/renderer"
 )
 
@@ -25,10 +24,10 @@ var _ Scene = (*BasicScene)(nil)
 
 type BasicScene struct {
 	node3d
-	background tensor.Vector4
+	background core.Vector4
 }
 
-func (scene *BasicScene) SetBackground(color tensor.Vector4) {
+func (scene *BasicScene) SetBackground(color core.Vector4) {
 	scene.background = color
 }
 

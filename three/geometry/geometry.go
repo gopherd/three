@@ -1,8 +1,6 @@
 package geometry
 
-import (
-	"github.com/gopherd/doge/math/tensor"
-)
+import "github.com/gopherd/threego/three/core"
 
 type Range struct {
 	Start int
@@ -25,7 +23,7 @@ const (
 type Geometry interface {
 	Index() Attribute
 	Attributes() map[string]Attribute
-	Bounds() (min, max tensor.Vector3)
+	Bounds() (min, max core.Vector3)
 	Groups() []Group
 	DrawRange() Range
 	DrawPolicy() DrawPolicy
@@ -36,7 +34,7 @@ var _ Geometry = (*BufferGeometry)(nil)
 type BufferGeometry struct {
 	indices    Uint32Attribute
 	attributes map[string]Attribute
-	bounds     struct{ min, max tensor.Vector3 }
+	bounds     struct{ min, max core.Vector3 }
 	groups     []Group
 	drawRange  Range
 	drawPolicy DrawPolicy
@@ -62,7 +60,7 @@ func (geo *BufferGeometry) SetAttribute(name string, attribute Attribute) {
 	geo.attributes[name] = attribute
 }
 
-func (geo *BufferGeometry) Bounds() (min, max tensor.Vector3) {
+func (geo *BufferGeometry) Bounds() (min, max core.Vector3) {
 	return geo.bounds.min, geo.bounds.max
 }
 
