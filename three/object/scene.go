@@ -1,12 +1,15 @@
 package object
 
 import (
+	"github.com/gopherd/doge/math/tensor"
+
 	"github.com/gopherd/threego/three/driver/renderer"
-	"github.com/gopherd/threego/three/math"
 )
 
 type Scene interface {
 	node
+
+	Add(object Object) bool
 	Render(renderer renderer.Renderer, camera Camera)
 
 	OnEnter()
@@ -22,7 +25,15 @@ var _ Scene = (*BasicScene)(nil)
 
 type BasicScene struct {
 	node3d
-	background math.Vector4
+	background tensor.Vector4
+}
+
+func (scene *BasicScene) SetBackground(color tensor.Vector4) {
+	scene.background = color
+}
+
+func (scene *BasicScene) Add(object Object) bool {
+	return scene.addChild(object)
 }
 
 // Render implements Scene Render method
@@ -36,10 +47,6 @@ func (scene *BasicScene) Render(renderer renderer.Renderer, camera Camera) {
 		}
 		recursivelyRenderObject(renderer, camera, cameraTransform, child, child.Transform())
 	}
-}
-
-func (scene *BasicScene) SetBackground(color math.Vector4) {
-	scene.background = color
 }
 
 // OnEnter implements Scene OnEnter method

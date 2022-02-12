@@ -1,7 +1,7 @@
 package geometry
 
 import (
-	"github.com/gopherd/threego/three/math"
+	"github.com/gopherd/doge/math/tensor"
 )
 
 type Range struct {
@@ -14,34 +14,44 @@ type Group struct {
 	MaterialIndex int
 }
 
+type DrawPolicy int
+
+const (
+	StaticDraw DrawPolicy = iota
+	DynamicDraw
+	StreamDraw
+)
+
 type Geometry interface {
 	Index() Attribute
-	SetIndex(Attribute)
-	GetAttribute(name string) Attribute
-	SetAttribute(name string, attribute Attribute)
-	Bounds() (min, max math.Vector3)
-	DrawRange() Range
-	SetDrawRange(Range)
-	AddGroup(Group)
+	Attributes() map[string]Attribute
+	Bounds() (min, max tensor.Vector3)
 	Groups() []Group
+	DrawRange() Range
+	DrawPolicy() DrawPolicy
 }
 
 var _ Geometry = (*BufferGeometry)(nil)
 
 type BufferGeometry struct {
-	indices    Attribute
+	indices    Uint32Attribute
 	attributes map[string]Attribute
-	bounds     struct{ min, max math.Vector3 }
-	drawRange  Range
+	bounds     struct{ min, max tensor.Vector3 }
 	groups     []Group
+	drawRange  Range
+	drawPolicy DrawPolicy
 }
 
 func (geo *BufferGeometry) Index() Attribute {
-	return geo.indices
+	return &geo.indices
 }
 
-func (geo *BufferGeometry) SetIndex(indices Attribute) {
+func (geo *BufferGeometry) SetIndex(indices Uint32Attribute) {
 	geo.indices = indices
+}
+
+func (geo *BufferGeometry) Attributes() map[string]Attribute {
+	return geo.attributes
 }
 
 func (geo *BufferGeometry) GetAttribute(name string) Attribute {
@@ -52,7 +62,7 @@ func (geo *BufferGeometry) SetAttribute(name string, attribute Attribute) {
 	geo.attributes[name] = attribute
 }
 
-func (geo *BufferGeometry) Bounds() (min, max math.Vector3) {
+func (geo *BufferGeometry) Bounds() (min, max tensor.Vector3) {
 	return geo.bounds.min, geo.bounds.max
 }
 
@@ -70,4 +80,12 @@ func (geo *BufferGeometry) AddGroup(group Group) {
 
 func (geo *BufferGeometry) Groups() []Group {
 	return geo.groups
+}
+
+func (geo *BufferGeometry) DrawPolicy() DrawPolicy {
+	return geo.drawPolicy
+}
+
+func (geo *BufferGeometry) SetDrawPolicy(drawPolicy DrawPolicy) {
+	geo.drawPolicy = drawPolicy
 }

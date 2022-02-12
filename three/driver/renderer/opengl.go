@@ -6,8 +6,9 @@ import (
 	"unsafe"
 
 	"github.com/go-gl/gl/v3.3-core/gl"
+	"github.com/gopherd/doge/math/tensor"
 
-	"github.com/gopherd/threego/three/math"
+	"github.com/gopherd/threego/three/driver/renderer/shader"
 )
 
 type openglRenderer struct {
@@ -87,7 +88,7 @@ func (openglRenderer) LinkProgram(program uint32) error {
 	return errors.New(string(buf[:n]))
 }
 
-func (openglRenderer) SetUniform(program uint32, name string, uniform Uniform) {
+func (openglRenderer) SetUniform(program uint32, name string, uniform shader.Uniform) {
 	var location = gl.GetUniformLocation(program, (*byte)(unsafe.Pointer(&name)))
 	switch value := uniform.(type) {
 	case int:
@@ -158,15 +159,15 @@ func (openglRenderer) SetUniform(program uint32, name string, uniform Uniform) {
 		gl.Uniform1f(location, value)
 	case [2]float32:
 		gl.Uniform2f(location, value[0], value[1])
-	case math.Vector2:
+	case tensor.Vector2:
 		gl.Uniform2f(location, value.X(), value.Y())
 	case [3]float32:
 		gl.Uniform3f(location, value[0], value[1], value[2])
-	case math.Vector3:
+	case tensor.Vector3:
 		gl.Uniform3f(location, value.X(), value.Y(), value.Z())
 	case [4]float32:
 		gl.Uniform4f(location, value[0], value[1], value[2], value[3])
-	case math.Vector4:
+	case tensor.Vector4:
 		gl.Uniform4f(location, value.X(), value.Y(), value.Z(), value.W())
 	case float64:
 		gl.Uniform1d(location, value)
@@ -176,7 +177,7 @@ func (openglRenderer) SetUniform(program uint32, name string, uniform Uniform) {
 		gl.Uniform3d(location, value[0], value[1], value[2])
 	case [4]float64:
 		gl.Uniform4d(location, value[0], value[1], value[2], value[3])
-	case math.Mat4x4:
+	case tensor.Mat4x4:
 		gl.UniformMatrix4fv(location, 1, false, &value[0])
 	default:
 		panic(fmt.Sprintf("unsupported uniform type: %T", uniform))

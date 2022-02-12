@@ -3,8 +3,9 @@ package object
 import (
 	"sync/atomic"
 
+	"github.com/gopherd/doge/math/tensor"
+
 	"github.com/gopherd/threego/three/driver/renderer"
-	"github.com/gopherd/threego/three/math"
 )
 
 var nextObjectUUID int64
@@ -20,12 +21,12 @@ type Object interface {
 	SetTag(tag string) // SetTag sets tag of Object
 	Parent() Object    // Parent returns parent of Object
 
-	Visible() bool                            // Visible reports whether the object is visible
-	Bounds() (min, max math.Vector3, ok bool) // Bounds returns object bounding box
-	Transform() math.Mat4x4                   // Transform returns transform matrix
+	Visible() bool                              // Visible reports whether the object is visible
+	Bounds() (min, max tensor.Vector3, ok bool) // Bounds returns object bounding box
+	Transform() tensor.Mat4x4                   // Transform returns transform matrix
 
 	// Render renders the Object to `renderer' with specified tranform
-	Render(renderer renderer.Renderer, cameraTransform, transform math.Mat4x4)
+	Render(renderer renderer.Renderer, cameraTransform, transform tensor.Mat4x4)
 }
 
 type node interface {
@@ -190,7 +191,7 @@ type object3d struct {
 		fshader string
 	}
 	visible   bool
-	transform math.Mat4x4
+	transform tensor.Mat4x4
 }
 
 // Init initializes Object
@@ -229,7 +230,7 @@ func (obj *object3d) SetVisible(visible bool) {
 }
 
 // Transform implements Object Transform method
-func (obj *object3d) Transform() math.Mat4x4 {
+func (obj *object3d) Transform() tensor.Mat4x4 {
 	return obj.transform
 }
 
@@ -248,7 +249,7 @@ func (obj *object3d) lazyInitProgram(renderer renderer.Renderer) error {
 }
 
 // Render implements Object Render method
-func (obj *object3d) Render(renderer renderer.Renderer, camera, transform math.Mat4x4) {
+func (obj *object3d) Render(renderer renderer.Renderer, camera, transform tensor.Mat4x4) {
 	if err := obj.lazyInitProgram(renderer); err != nil {
 		println(err.Error())
 	}
@@ -259,23 +260,17 @@ func (obj *object3d) Render(renderer renderer.Renderer, camera, transform math.M
 	renderer.SetUniform(obj.program.id, "transform", transform)
 }
 
-// Add adds object child to parent
-func Add(parent, child Object) {
+// Attatch attatchs child to parent object
+func Attatch(parent, child Object) bool {
 	if parent.addChild(child) {
 		child.setParent(parent)
+		return true
 	}
-}
-
-// MustAdd adds object child to parent. It would panic if failed
-func MustAdd(parent, child Object) {
-	if !parent.addChild(child) {
-		panic("add child failed")
-	}
-	child.setParent(parent)
+	return false
 }
 
 // TransformToWorld calculates object's transform in world
-func TransformToWorld(obj Object) math.Mat4x4 {
+func TransformToWorld(obj Object) tensor.Mat4x4 {
 	var mat = obj.Transform()
 	var parent = obj.Parent()
 	for parent != nil {
@@ -288,9 +283,9 @@ func TransformToWorld(obj Object) math.Mat4x4 {
 func recursivelyRenderObject(
 	renderer renderer.Renderer,
 	camera Camera,
-	cameraTransform math.Mat4x4,
+	cameraTransform tensor.Mat4x4,
 	object Object,
-	objectTransform math.Mat4x4,
+	objectTransform tensor.Mat4x4,
 ) {
 	renderObject(renderer, camera, cameraTransform, object, objectTransform)
 	for i, n := 0, object.NumChild(); i < n; i++ {
@@ -306,9 +301,9 @@ func recursivelyRenderObject(
 func renderObject(
 	renderer renderer.Renderer,
 	camera Camera,
-	cameraTransform math.Mat4x4,
+	cameraTransform tensor.Mat4x4,
 	object Object,
-	objectTransform math.Mat4x4,
+	objectTransform tensor.Mat4x4,
 ) {
 	min, max, ok := object.Bounds()
 	if ok {

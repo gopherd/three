@@ -1,8 +1,6 @@
 package material
 
-import (
-	"github.com/gopherd/threego/three/driver/renderer"
-)
+import "github.com/gopherd/threego/three/driver/renderer/shader"
 
 type FaceSide int
 
@@ -12,16 +10,27 @@ const (
 	DoubleSide
 )
 
-type Shader interface {
-	Uniforms() map[string]renderer.Uniform
-	VertexShader() string
-	FragmentShader() string
+type Options struct {
+	Side         FaceSide
+	Transparent  bool
+	Opacity      float32
+	VertexColors float32
 }
 
 type Material interface {
-	Side() FaceSide
-	Transparent() bool
-	Opacity() float32
-	VertexColors() bool
-	Shader() Shader
+	Options() Options
+	Shader() shader.Shader
+}
+
+type material struct {
+	options Options
+	shader  shader.Shader
+}
+
+func (m *material) Opitions() Options {
+	return m.options
+}
+
+func (m *material) Shader() shader.Shader {
+	return m.shader
 }
