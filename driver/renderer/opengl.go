@@ -8,7 +8,7 @@ import (
 	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/gopherd/doge/math/tensor"
 
-	"github.com/gopherd/threego/three/driver/renderer/shader"
+	"github.com/gopherd/three/driver/renderer/shader"
 )
 
 type openglRenderer struct {

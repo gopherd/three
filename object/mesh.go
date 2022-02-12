@@ -1,10 +1,10 @@
 package object
 
 import (
-	"github.com/gopherd/threego/three/core"
-	"github.com/gopherd/threego/three/driver/renderer"
-	"github.com/gopherd/threego/three/geometry"
-	"github.com/gopherd/threego/three/material"
+	"github.com/gopherd/three/core"
+	"github.com/gopherd/three/driver/renderer"
+	"github.com/gopherd/three/geometry"
+	"github.com/gopherd/three/material"
 )
 
 var _ Object = (*Mesh)(nil)

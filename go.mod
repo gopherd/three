@@ -1,4 +1,4 @@
-module github.com/gopherd/threego
+module github.com/gopherd/three
 
 go 1.18
 

@@ -1,6 +1,6 @@
 package renderer
 
-import "github.com/gopherd/threego/three/driver/renderer/shader"
+import "github.com/gopherd/three/driver/renderer/shader"
 
 type Renderer interface {
 	Init(width, height int) error

@@ -3,8 +3,8 @@ package object
 import (
 	"sync/atomic"
 
-	"github.com/gopherd/threego/three/core"
-	"github.com/gopherd/threego/three/driver/renderer"
+	"github.com/gopherd/three/core"
+	"github.com/gopherd/three/driver/renderer"
 )
 
 var nextObjectUUID int64

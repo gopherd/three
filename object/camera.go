@@ -1,8 +1,8 @@
 package object
 
 import (
-	"github.com/gopherd/threego/three/core"
-	"github.com/gopherd/threego/three/driver/renderer"
+	"github.com/gopherd/three/core"
+	"github.com/gopherd/three/driver/renderer"
 )
 
 // Camera represents camera object

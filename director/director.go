@@ -1,41 +1,41 @@
-package application
+package director
 
 import (
-	"github.com/gopherd/threego/three/driver/renderer"
-	"github.com/gopherd/threego/three/driver/window"
-	"github.com/gopherd/threego/three/object"
+	"github.com/gopherd/three/driver/renderer"
+	"github.com/gopherd/three/driver/window"
+	"github.com/gopherd/three/object"
 )
 
-type Application struct {
+type Director struct {
 	window   window.Window
 	renderer renderer.Renderer
 	scenes   []object.Scene
 	camera   object.Camera
 }
 
-var app = new(Application)
+var app = new(Director)
 
-func Get() *Application {
+func Get() *Director {
 	return app
 }
 
-// Init implements three.Application Init method
-func (app *Application) Init(window window.Window, renderer renderer.Renderer) error {
+// Init implements boot.Application Init method
+func (app *Director) Init(window window.Window, renderer renderer.Renderer) error {
 	app.window = window
 	app.renderer = renderer
 	return nil
 }
 
-// Shutdown implements three.Application Shutdown method
-func (app *Application) Shutdown() {
+// Shutdown implements boot.Application Shutdown method
+func (app *Director) Shutdown() {
 	if n := len(app.scenes); n > 0 {
 		app.scenes[n-1].OnExit()
 		app.scenes = app.scenes[:0]
 	}
 }
 
-// Update implements three.Application Update method
-func (app *Application) Update() {
+// Update implements boot.Application Update method
+func (app *Director) Update() {
 	var scene = app.GetRunningScene()
 	if scene == nil {
 		return
@@ -46,22 +46,22 @@ func (app *Application) Update() {
 	}
 }
 
-func (app *Application) GetCamera() object.Camera {
+func (app *Director) GetCamera() object.Camera {
 	return app.camera
 }
 
-func (app *Application) SetCamera(camera object.Camera) {
+func (app *Director) SetCamera(camera object.Camera) {
 	app.camera = camera
 }
 
-func (app *Application) GetRunningScene() object.Scene {
+func (app *Director) GetRunningScene() object.Scene {
 	if n := len(app.scenes); n > 0 {
 		return app.scenes[n-1]
 	}
 	return nil
 }
 
-func (app *Application) RunScene(scene object.Scene) {
+func (app *Director) RunScene(scene object.Scene) {
 	if n := len(app.scenes); n > 0 {
 		app.scenes[n-1].OnExit()
 		app.scenes = app.scenes[:0]
@@ -69,7 +69,7 @@ func (app *Application) RunScene(scene object.Scene) {
 	app.PushScene(scene)
 }
 
-func (app *Application) PushScene(scene object.Scene) {
+func (app *Director) PushScene(scene object.Scene) {
 	if n := len(app.scenes); n > 0 {
 		app.scenes[n-1].OnExit()
 	}
@@ -77,7 +77,7 @@ func (app *Application) PushScene(scene object.Scene) {
 	scene.OnEnter()
 }
 
-func (app *Application) PopScene(scene object.Scene) {
+func (app *Director) PopScene(scene object.Scene) {
 	if n := len(app.scenes); n > 0 {
 		app.scenes[n-1].OnExit()
 		app.scenes = app.scenes[:n-1]

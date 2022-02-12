@@ -1,6 +1,6 @@
 package material
 
-import "github.com/gopherd/threego/three/driver/renderer/shader"
+import "github.com/gopherd/three/driver/renderer/shader"
 
 type FaceSide int
 

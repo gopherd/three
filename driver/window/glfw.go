@@ -3,7 +3,7 @@ package window
 import (
 	"github.com/go-gl/glfw/v3.3/glfw"
 
-	"github.com/gopherd/threego/three/driver/renderer"
+	"github.com/gopherd/three/driver/renderer"
 )
 
 type glfwindow struct {

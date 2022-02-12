@@ -1,4 +1,4 @@
-package three
+package boot
 
 import (
 	"os"
@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"sync/atomic"
 
-	"github.com/gopherd/threego/three/driver/renderer"
-	"github.com/gopherd/threego/three/driver/window"
+	"github.com/gopherd/three/driver/renderer"
+	"github.com/gopherd/three/driver/window"
 )
 
 func init() {

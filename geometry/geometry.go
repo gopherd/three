@@ -1,6 +1,6 @@
 package geometry
 
-import "github.com/gopherd/threego/three/core"
+import "github.com/gopherd/three/core"
 
 type Range struct {
 	Start int

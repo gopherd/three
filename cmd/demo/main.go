@@ -3,16 +3,16 @@ package main
 import (
 	"log"
 
-	"github.com/gopherd/threego/three"
-	"github.com/gopherd/threego/three/application"
-	"github.com/gopherd/threego/three/core"
-	"github.com/gopherd/threego/three/object"
+	"github.com/gopherd/three/boot"
+	"github.com/gopherd/three/core"
+	"github.com/gopherd/three/director"
+	"github.com/gopherd/three/object"
 )
 
 func main() {
-	app := application.Get()
+	app := director.Get()
 	app.RunScene(NewScene())
-	three.Run(app, three.DefaultOptions("Demo"))
+	boot.Run(app, boot.DefaultOptions("Demo"))
 }
 
 type Scene struct {
@@ -25,7 +25,7 @@ func NewScene() *Scene {
 	scene.SetBackground(core.Vec4(0.2, 0.3, 0.3, 1.0))
 	scene.camera = object.NewPerspectiveCamera()
 	scene.Add(scene.camera)
-	application.Get().SetCamera(scene.camera)
+	director.Get().SetCamera(scene.camera)
 	return scene
 }
 
