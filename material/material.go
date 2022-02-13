@@ -21,16 +21,3 @@ type Material interface {
 	Options() Options
 	Shader() shader.Shader
 }
-
-type BasicMaterial struct {
-	options Options
-	shader  shader.Shader
-}
-
-func (m *BasicMaterial) Opitions() Options {
-	return m.options
-}
-
-func (m *BasicMaterial) Shader() shader.Shader {
-	return m.shader
-}

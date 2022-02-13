@@ -10,7 +10,7 @@ type Scene interface {
 	node
 
 	// Add adds object to the scene
-	Add(object Object) bool
+	Add(object Object)
 	// Render renders the scene by camera to renderer
 	Render(renderer renderer.Renderer, camera Camera)
 
@@ -39,15 +39,15 @@ func (scene *BasicScene) SetBackground(color core.Vector4) {
 }
 
 // Add implements Scene Add method
-func (scene *BasicScene) Add(object Object) bool {
-	return scene.addChild(object)
+func (scene *BasicScene) Add(object Object) {
+	scene.addChild(object)
 }
 
 // Render implements Scene Render method
 func (scene *BasicScene) Render(renderer renderer.Renderer, camera Camera) {
 	var background = scene.background
 	renderer.ClearColor(background.R(), background.G(), background.B(), background.A())
-	var cameraTransform = TransformToWorld(camera)
+	var cameraTransform = camera.WorldTransform()
 	for _, child := range scene.children {
 		if !child.Visible() {
 			continue

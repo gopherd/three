@@ -4,8 +4,18 @@ import (
 	"sync/atomic"
 
 	"github.com/gopherd/three/core"
+	"github.com/gopherd/three/core/event"
 	"github.com/gopherd/three/driver/renderer"
 )
+
+type AddedEvent struct{}
+type RemovedEvent struct{}
+
+var AddedEventType = event.TypeOf[*AddedEvent](nil)
+var RemovedEventType = event.TypeOf[*AddedEvent](nil)
+
+func (AddedEvent) Type() event.Type   { return AddedEventType }
+func (RemovedEvent) Type() event.Type { return RemovedEventType }
 
 var nextObjectUUID int64
 
@@ -22,14 +32,19 @@ type Object interface {
 
 	Visible() bool                            // Visible reports whether the object is visible
 	Bounds() (min, max core.Vector3, ok bool) // Bounds returns object bounding box
-	Transform() core.Mat4x4                   // Transform returns transform matrix
+	Transform() core.Mat4x4                   // Transform returns transform matrix in local space
+	WorldTransform() core.Mat4x4              // WorldTransform returns transform matrix in world space
+	LocalToWorld(core.Vector3) core.Vector3   // LocalToWorld Converts the vector from this object's local space to world space
+	LookAt(core.Vector3)                      // LookAt a position in world space
 
 	// Render renders the Object to `renderer' with specified tranform
 	Render(renderer renderer.Renderer, cameraTransform, transform core.Mat4x4)
 }
 
 type node interface {
-	addChild(child Object) bool
+	event.Dispatcher
+
+	addChild(child Object)
 
 	RemoveChild(child Object) bool     // RemoveChild removes child object
 	RemoveChildByIndex(i int)          // RemoveChildByIndex removes ith child object
@@ -45,25 +60,24 @@ type node interface {
 }
 
 type node3d struct {
+	event.BasicDispatcher
+
 	children []Object
 	byUUID   map[int64]int
 	byTag    map[string]int
-
-	onChildAdded   func(child Object)
-	onChildRemoved func(child Object)
 }
 
 // addChild implements Object unexported addChild method
-func (node *node3d) addChild(child Object) bool {
-	if child.Parent() != nil {
-		return false
+func (node *node3d) addChild(child Object) {
+	if parent := child.Parent(); parent != nil {
+		parent.RemoveChild(child)
 	}
 	if node.byUUID == nil {
 		node.byUUID = make(map[int64]int)
 	}
 	var uuid = child.UUID()
 	if _, ok := node.byUUID[uuid]; ok {
-		return false
+		return
 	}
 	var index = len(node.children)
 	node.byUUID[uuid] = index
@@ -74,7 +88,7 @@ func (node *node3d) addChild(child Object) bool {
 		node.byTag[tag] = index
 	}
 	node.children = append(node.children, child)
-	return true
+	child.DispatchEvent(AddedEvent{})
 }
 
 func (node *node3d) removeChild(i int, child Object) {
@@ -99,9 +113,7 @@ func (node *node3d) removeChild(i int, child Object) {
 		}
 	}
 	node.children = node.children[:end]
-	if node.onChildRemoved != nil {
-		node.onChildRemoved(child)
-	}
+	child.DispatchEvent(RemovedEvent{})
 }
 
 // RemoveChild implements Object RemoveChild method
@@ -233,6 +245,14 @@ func (obj *object3d) Transform() core.Mat4x4 {
 	return obj.transform
 }
 
+// WorldTransform implements Object WorldTransform method
+func (obj *object3d) WorldTransform() core.Mat4x4 {
+	if obj.parent == nil {
+		return obj.transform
+	}
+	return obj.parent.WorldTransform().Dot(obj.transform)
+}
+
 func (obj *object3d) lazyInitProgram(renderer renderer.Renderer) error {
 	if obj.program.created || obj.program.fail {
 		return nil
@@ -259,24 +279,19 @@ func (obj *object3d) Render(renderer renderer.Renderer, camera, transform core.M
 	renderer.SetUniform(obj.program.id, "transform", transform)
 }
 
-// Attatch attatchs child to parent object
-func Attatch(parent, child Object) bool {
-	if parent.addChild(child) {
-		child.setParent(parent)
-		return true
-	}
-	return false
+// LocalToWorld implements Object LocalToWorld method
+func (obj *object3d) LocalToWorld(vec core.Vector3) core.Vector3 {
+	return obj.WorldTransform().DotVec3(vec)
 }
 
-// TransformToWorld calculates object's transform in world
-func TransformToWorld(obj Object) core.Mat4x4 {
-	var mat = obj.Transform()
-	var parent = obj.Parent()
-	for parent != nil {
-		mat = parent.Transform().Dot(mat)
-		parent = parent.Parent()
-	}
-	return mat
+// TODO: LookAt implements Object LookAt method
+func (obj *object3d) LookAt(pos core.Vector3) {
+}
+
+// Attatch attatchs child to parent object
+func Attatch(parent, child Object) {
+	parent.addChild(child)
+	child.setParent(parent)
 }
 
 func recursivelyRenderObject(

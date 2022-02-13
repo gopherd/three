@@ -14,7 +14,7 @@ import (
 type openglRenderer struct {
 }
 
-func OpenGLRenderer() *openglRenderer {
+func OpenGLRenderer() Renderer {
 	return &openglRenderer{}
 }
 

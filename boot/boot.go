@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"sync/atomic"
 
+	"github.com/gopherd/doge/query"
 	"github.com/gopherd/three/driver/renderer"
 	"github.com/gopherd/three/driver/window"
 )
@@ -32,21 +33,11 @@ type Options struct {
 }
 
 func (options *Options) init() {
-	if options.Title == "" {
-		options.Title = "Title"
-	}
-	if options.Width <= 0 {
-		options.Width = 800
-	}
-	if options.Height <= 0 {
-		options.Height = 600
-	}
-	if options.Window == nil {
-		options.Window = window.GLFWindow()
-	}
-	if options.Renderer == nil {
-		options.Renderer = renderer.OpenGLRenderer()
-	}
+	options.Title = query.Or(options.Title, "Title")
+	options.Width = query.Or(options.Width, 800)
+	options.Height = query.Or(options.Height, 600)
+	options.Window = query.OrNew(options.Window, window.GLFWindow)
+	options.Renderer = query.OrNew(options.Renderer, renderer.OpenGLRenderer)
 }
 
 func Run(app Application, options Options) {
@@ -71,10 +62,14 @@ func Run(app Application, options Options) {
 	defer app.Shutdown()
 
 	var quit int32
-	var sig = make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt)
+	var sigChan = make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
 	go func() {
-		<-sig
+		for sig := range sigChan {
+			if sig == os.Interrupt {
+				break
+			}
+		}
 		atomic.StoreInt32(&quit, 1)
 	}()
 

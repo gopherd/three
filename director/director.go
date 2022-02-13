@@ -4,14 +4,16 @@ import (
 	"time"
 
 	"github.com/gopherd/three/boot"
+	"github.com/gopherd/three/core/event"
 	"github.com/gopherd/three/driver/renderer"
 	"github.com/gopherd/three/driver/window"
 	"github.com/gopherd/three/object"
 )
 
 var director struct {
-	window   window.Window
-	renderer renderer.Renderer
+	dispatcher event.BasicDispatcher
+	window     window.Window
+	renderer   renderer.Renderer
 
 	scenes []object.Scene
 	camera object.Camera
@@ -106,4 +108,9 @@ func PopScene(scene object.Scene) {
 			director.scenes[n-2].OnEnter()
 		}
 	}
+}
+
+// Dispatcher returns the event dispatcher
+func Dispatcher() event.Dispatcher {
+	return director.dispatcher
 }
