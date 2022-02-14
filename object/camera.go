@@ -8,7 +8,7 @@ import (
 // Camera represents a camera object
 type Camera interface {
 	Object
-	ContainsBox(transform core.Mat4x4, min, max core.Vector3) bool
+	ContainsBox(transform core.Matrix4, min, max core.Vector3) bool
 }
 
 type cameraImpl struct {
@@ -21,7 +21,7 @@ func (camera *cameraImpl) Bounds() (min, max core.Vector3, ok bool) {
 }
 
 // TODO(delay) Render implements Object Render method
-func (camera *cameraImpl) Render(renderer renderer.Renderer, cameraTransform, transform core.Mat4x4) {
+func (camera *cameraImpl) Render(renderer renderer.Renderer, cameraTransform, transform core.Matrix4) {
 }
 
 // PerspectiveCamera represents a perspective camera
@@ -48,6 +48,6 @@ func NewPerspectiveCamera() PerspectiveCamera {
 func (camera *perspectiveCameraImpl) isPerspectiveCamera() {}
 
 // TODO(delay) ContainsBox implements Camera ContainsBox method
-func (camera *perspectiveCameraImpl) ContainsBox(transform core.Mat4x4, min, max core.Vector3) bool {
+func (camera *perspectiveCameraImpl) ContainsBox(transform core.Matrix4, min, max core.Vector3) bool {
 	return true
 }

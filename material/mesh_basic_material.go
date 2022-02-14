@@ -7,6 +7,7 @@ type MeshBasicMaterialParameters struct {
 }
 
 type MeshBasicMaterial struct {
+	basicMaterial
 	parameters MeshBasicMaterialParameters
 	shader     shader.Shader
 }

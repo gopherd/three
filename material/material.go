@@ -20,4 +20,18 @@ type Options struct {
 type Material interface {
 	Options() Options
 	Shader() shader.Shader
+	NeedsUpdate() bool
+	SetNeedsUpdate(bool)
+}
+
+type basicMaterial struct {
+	notNeedsUpdate bool
+}
+
+func (m *basicMaterial) NeedsUpdate() bool {
+	return !m.notNeedsUpdate
+}
+
+func (m *basicMaterial) SetNeedsUpdate(needsUpdate bool) {
+	m.notNeedsUpdate = !needsUpdate
 }

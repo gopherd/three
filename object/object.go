@@ -6,16 +6,8 @@ import (
 	"github.com/gopherd/three/core"
 	"github.com/gopherd/three/core/event"
 	"github.com/gopherd/three/driver/renderer"
+	"github.com/gopherd/three/driver/renderer/shader"
 )
-
-type AddedEvent struct{}
-type RemovedEvent struct{}
-
-var AddedEventType = event.TypeOf[*AddedEvent](nil)
-var RemovedEventType = event.TypeOf[*AddedEvent](nil)
-
-func (AddedEvent) Type() event.Type   { return AddedEventType }
-func (RemovedEvent) Type() event.Type { return RemovedEventType }
 
 var nextObjectUUID int64
 
@@ -32,19 +24,19 @@ type Object interface {
 
 	Visible() bool                            // Visible reports whether the object is visible
 	Bounds() (min, max core.Vector3, ok bool) // Bounds returns object bounding box
-	Transform() core.Mat4x4                   // Transform returns transform matrix in local space
-	WorldTransform() core.Mat4x4              // WorldTransform returns transform matrix in world space
+	Transform() core.Matrix4                  // Transform returns transform matrix in local space
+	WorldTransform() core.Matrix4             // WorldTransform returns transform matrix in world space
 	LocalToWorld(core.Vector3) core.Vector3   // LocalToWorld Converts the vector from this object's local space to world space
-	LookAt(core.Vector3)                      // LookAt a position in world space
+	LookAt(core.Vector3)                      // LookAt looks at a position in world space
 
 	// Render renders the Object to `renderer' with specified tranform
-	Render(renderer renderer.Renderer, cameraTransform, transform core.Mat4x4)
+	Render(renderer renderer.Renderer, cameraTransform, transform core.Matrix4)
 }
 
 type node interface {
-	event.Dispatcher
-
 	addChild(child Object)
+
+	DispatchEvent(event.Event) bool
 
 	RemoveChild(child Object) bool     // RemoveChild removes child object
 	RemoveChildByIndex(i int)          // RemoveChildByIndex removes ith child object
@@ -60,7 +52,7 @@ type node interface {
 }
 
 type node3d struct {
-	event.BasicDispatcher
+	event.Dispatcher
 
 	children []Object
 	byUUID   map[int64]int
@@ -88,7 +80,7 @@ func (node *node3d) addChild(child Object) {
 		node.byTag[tag] = index
 	}
 	node.children = append(node.children, child)
-	child.DispatchEvent(AddedEvent{})
+	child.DispatchEvent(addedEvent)
 }
 
 func (node *node3d) removeChild(i int, child Object) {
@@ -112,8 +104,9 @@ func (node *node3d) removeChild(i int, child Object) {
 			}
 		}
 	}
+	node.children[end] = nil
 	node.children = node.children[:end]
-	child.DispatchEvent(RemovedEvent{})
+	child.DispatchEvent(removedEvent)
 }
 
 // RemoveChild implements Object RemoveChild method
@@ -195,14 +188,12 @@ type object3d struct {
 	uuid    int64
 	tag     string
 	program struct {
-		fail    bool
+		renderer.Program
 		created bool
-		id      uint32
-		vshader string
-		fshader string
+		fail    bool
 	}
 	visible   bool
-	transform core.Mat4x4
+	transform core.Matrix4
 }
 
 // Init initializes Object
@@ -241,42 +232,16 @@ func (obj *object3d) SetVisible(visible bool) {
 }
 
 // Transform implements Object Transform method
-func (obj *object3d) Transform() core.Mat4x4 {
+func (obj *object3d) Transform() core.Matrix4 {
 	return obj.transform
 }
 
 // WorldTransform implements Object WorldTransform method
-func (obj *object3d) WorldTransform() core.Mat4x4 {
+func (obj *object3d) WorldTransform() core.Matrix4 {
 	if obj.parent == nil {
 		return obj.transform
 	}
 	return obj.parent.WorldTransform().Dot(obj.transform)
-}
-
-func (obj *object3d) lazyInitProgram(renderer renderer.Renderer) error {
-	if obj.program.created || obj.program.fail {
-		return nil
-	}
-	program, err := renderer.CreateProgram(obj.program.vshader, obj.program.fshader)
-	if err != nil {
-		obj.program.fail = true
-		return err
-	}
-	obj.program.created = true
-	obj.program.id = program
-	return nil
-}
-
-// Render implements Object Render method
-func (obj *object3d) Render(renderer renderer.Renderer, camera, transform core.Mat4x4) {
-	if err := obj.lazyInitProgram(renderer); err != nil {
-		println(err.Error())
-	}
-	if obj.program.fail {
-		return
-	}
-	renderer.SetUniform(obj.program.id, "view", camera)
-	renderer.SetUniform(obj.program.id, "transform", transform)
 }
 
 // LocalToWorld implements Object LocalToWorld method
@@ -288,6 +253,23 @@ func (obj *object3d) LocalToWorld(vec core.Vector3) core.Vector3 {
 func (obj *object3d) LookAt(pos core.Vector3) {
 }
 
+func (obj *object3d) createProgram(renderer renderer.Renderer, shader shader.Shader) error {
+	program, err := renderer.CreateProgram(shader.Vertex, shader.Fragment)
+	if err != nil {
+		obj.program.fail = false
+		return err
+	}
+	obj.program.created = true
+	obj.program.Program = program
+	return nil
+}
+
+// Render implements Object Render method
+func (obj *object3d) Render(renderer renderer.Renderer, camera, transform core.Matrix4) {
+	renderer.SetUniform(obj.program.Id, "view", camera)
+	renderer.SetUniform(obj.program.Id, "transform", transform)
+}
+
 // Attatch attatchs child to parent object
 func Attatch(parent, child Object) {
 	parent.addChild(child)
@@ -297,9 +279,9 @@ func Attatch(parent, child Object) {
 func recursivelyRenderObject(
 	renderer renderer.Renderer,
 	camera Camera,
-	cameraTransform core.Mat4x4,
+	cameraTransform core.Matrix4,
 	object Object,
-	objectTransform core.Mat4x4,
+	objectTransform core.Matrix4,
 ) {
 	renderObject(renderer, camera, cameraTransform, object, objectTransform)
 	for i, n := 0, object.NumChild(); i < n; i++ {
@@ -315,9 +297,9 @@ func recursivelyRenderObject(
 func renderObject(
 	renderer renderer.Renderer,
 	camera Camera,
-	cameraTransform core.Mat4x4,
+	cameraTransform core.Matrix4,
 	object Object,
-	objectTransform core.Mat4x4,
+	objectTransform core.Matrix4,
 ) {
 	min, max, ok := object.Bounds()
 	if ok {

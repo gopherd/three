@@ -46,7 +46,7 @@ func (scene *BasicScene) Add(object Object) {
 // Render implements Scene Render method
 func (scene *BasicScene) Render(renderer renderer.Renderer, camera Camera) {
 	var background = scene.background
-	renderer.ClearColor(background.R(), background.G(), background.B(), background.A())
+	renderer.ClearColor(background.X(), background.Y(), background.Z(), background.W())
 	var cameraTransform = camera.WorldTransform()
 	for _, child := range scene.children {
 		if !child.Visible() {

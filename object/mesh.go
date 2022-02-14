@@ -15,11 +15,43 @@ type Mesh struct {
 	material material.Material
 }
 
-// TODO: Bounds implements Object Bounds method
-func (mesh *Mesh) Bounds() (min, max core.Vector3, ok bool) {
-	return
+func NewMesh(geometry geometry.Geometry, material material.Material) *Mesh {
+	var mesh = new(Mesh)
+	mesh.Init()
+	mesh.geometry = geometry
+	mesh.material = material
+	return mesh
 }
 
-// TODO: Render implements Object Render method
-func (mesh *Mesh) Render(renderer renderer.Renderer, cameraTransform, transform core.Mat4x4) {
+// Bounds implements Object Bounds method
+func (mesh *Mesh) Bounds() (min, max core.Vector3, ok bool) {
+	min, max = mesh.geometry.Bounds()
+	return min, max, min != max
+}
+
+// Render implements Object Render method
+func (mesh *Mesh) Render(renderer renderer.Renderer, cameraTransform, transform core.Matrix4) {
+	mesh.object3d.Render(renderer, cameraTransform, transform)
+
+	var shader = mesh.material.Shader()
+	if !mesh.object3d.program.created && !mesh.object3d.program.fail {
+		if err := mesh.object3d.createProgram(renderer, shader); err != nil {
+			panic(err)
+		}
+	}
+	var needsUpdate = mesh.material.NeedsUpdate()
+	if needsUpdate {
+		mesh.material.SetNeedsUpdate(false)
+		for name, uniform := range shader.Uniforms {
+			renderer.SetUniform(mesh.object3d.program.Id, name, uniform)
+		}
+	}
+
+	var attributes = mesh.geometry.Attributes()
+	var index = mesh.geometry.Index()
+	if mesh.geometry.NeedsUpdate() {
+		mesh.geometry.SetNeedsUpdate(false)
+		// TODO: update attributes
+	}
+	_, _ = attributes, index
 }

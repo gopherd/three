@@ -1,6 +1,8 @@
 package director
 
 import (
+	"fmt"
+	"runtime/debug"
 	"time"
 
 	"github.com/gopherd/three/boot"
@@ -11,7 +13,7 @@ import (
 )
 
 var director struct {
-	dispatcher event.BasicDispatcher
+	dispatcher event.Dispatcher
 	window     window.Window
 	renderer   renderer.Renderer
 
@@ -44,6 +46,11 @@ func (application) Shutdown() {
 
 // Update implements boot.Application Update method
 func (application) Update() {
+	defer func() {
+		if e := recover(); e != nil {
+			println(fmt.Sprintf("Error: %v\nStack:\n%v", e, string(debug.Stack())))
+		}
+	}()
 	var now = time.Now()
 	director.deltaTime = now.Sub(director.updatedAt)
 	director.updatedAt = now
@@ -111,6 +118,6 @@ func PopScene(scene object.Scene) {
 }
 
 // Dispatcher returns the event dispatcher
-func Dispatcher() event.Dispatcher {
-	return director.dispatcher
+func Dispatcher() *event.Dispatcher {
+	return &director.dispatcher
 }

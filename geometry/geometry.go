@@ -27,17 +27,20 @@ type Geometry interface {
 	Groups() []Group
 	DrawRange() Range
 	DrawPolicy() DrawPolicy
+	NeedsUpdate() bool
+	SetNeedsUpdate(bool)
 }
 
 var _ Geometry = (*BufferGeometry)(nil)
 
 type BufferGeometry struct {
-	indices    Uint32Attribute
-	attributes map[string]Attribute
-	bounds     struct{ min, max core.Vector3 }
-	groups     []Group
-	drawRange  Range
-	drawPolicy DrawPolicy
+	indices        Uint32Attribute
+	attributes     map[string]Attribute
+	bounds         struct{ min, max core.Vector3 }
+	groups         []Group
+	drawRange      Range
+	drawPolicy     DrawPolicy
+	notNeedsUpdate bool
 }
 
 func (geo *BufferGeometry) Index() Attribute {
@@ -86,4 +89,12 @@ func (geo *BufferGeometry) DrawPolicy() DrawPolicy {
 
 func (geo *BufferGeometry) SetDrawPolicy(drawPolicy DrawPolicy) {
 	geo.drawPolicy = drawPolicy
+}
+
+func (geo *BufferGeometry) NeedsUpdate() bool {
+	return !geo.notNeedsUpdate
+}
+
+func (geo *BufferGeometry) SetNeedsUpdate(needsUpdate bool) {
+	geo.notNeedsUpdate = !needsUpdate
 }

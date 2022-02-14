@@ -52,26 +52,34 @@ func createShader(shaderType uint32, source string) (uint32, error) {
 	return 0, errors.New(string(buf[:n]))
 }
 
-func (openglRenderer) CreateProgram(vshader, fshader string) (uint32, error) {
+func (openglRenderer) CreateProgram(vshader, fshader string) (program Program, err error) {
 	var (
 		vshaderId uint32
 		fshaderId uint32
-		err       error
 	)
 	vshaderId, err = createShader(gl.VERTEX_SHADER, vshader)
 	if err != nil {
-		return 0, err
+		return
 	}
 	fshaderId, err = createShader(gl.FRAGMENT_SHADER, fshader)
 	if err != nil {
-		return 0, err
+		return
 	}
-	var program = gl.CreateProgram()
-	gl.AttachShader(program, vshaderId)
-	gl.AttachShader(program, fshaderId)
+	var id = gl.CreateProgram()
+	gl.AttachShader(id, vshaderId)
+	gl.AttachShader(id, fshaderId)
 	gl.DeleteShader(vshaderId)
 	gl.DeleteShader(fshaderId)
-	return program, nil
+	program = Program{
+		Id:               id,
+		VertextShaderId:  vshaderId,
+		FragmentShaderId: fshaderId,
+	}
+	return
+}
+
+func (openglRenderer) ClearProgram(program Program) {
+	gl.DeleteProgram(program.Id)
 }
 
 func (openglRenderer) LinkProgram(program uint32) error {
@@ -183,9 +191,13 @@ func (openglRenderer) SetUniform(program uint32, name string, uniform shader.Uni
 		gl.Uniform4d(location, value[0], value[1], value[2], value[3])
 	case tensor.Vector4[float64]:
 		gl.Uniform4d(location, value.X(), value.Y(), value.Z(), value.W())
-	case tensor.Mat4x4[float32]:
+	case tensor.Matrix3[float32]:
+		gl.UniformMatrix3fv(location, 1, false, &value[0])
+	case tensor.Matrix3[float64]:
+		gl.UniformMatrix3dv(location, 1, false, &value[0])
+	case tensor.Matrix4[float32]:
 		gl.UniformMatrix4fv(location, 1, false, &value[0])
-	case tensor.Mat4x4[float64]:
+	case tensor.Matrix4[float64]:
 		gl.UniformMatrix4dv(location, 1, false, &value[0])
 	default:
 		panic(fmt.Sprintf("unsupported uniform type: %T", uniform))
