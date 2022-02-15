@@ -2,7 +2,6 @@ package object
 
 import (
 	"github.com/gopherd/three/core"
-	"github.com/gopherd/three/geometry"
 )
 
 // OrthographicCamera represents an orthographic camera
@@ -36,24 +35,16 @@ func (camera *OrthographicCamera) CameraType() CameraType {
 
 // Projection implements Object Projection method
 func (camera *OrthographicCamera) Projection() core.Matrix4 {
-	if camera.isProjectionNeedsUpdate() {
-		camera.setProjectionNeedsUpdate(false)
-		camera.updateProjectionMatrix()
-	}
+	camera.tryUpdateProjectionMatrix()
 	return camera.proj.matrix
 }
 
-// TODO(delay) IntersectsBox implements Camera IntersectsBox method
-func (camera *OrthographicCamera) IntersectsBox(box geometry.Box3) bool {
-	return true
+func (camera *OrthographicCamera) tryUpdateProjectionMatrix() {
+	if camera.isProjectionNeedsUpdate() {
+		camera.updateProjectionMatrix()
+	}
 }
 
-// TODO(delay) ContainsPoint implements Camera ContainsPoint method
-func (camera *OrthographicCamera) ContainsPoint(point core.Vector3) bool {
-	return true
-}
-
-// updateProjectionMatrix try updates projection matrix
 func (camera *OrthographicCamera) updateProjectionMatrix() {
 	var dx = (camera.right - camera.left) / (2 * camera.zoom)
 	var dy = (camera.top - camera.bottom) / (2 * camera.zoom)
@@ -75,10 +66,5 @@ func (camera *OrthographicCamera) updateProjectionMatrix() {
 	}
 
 	camera.proj.matrix.MakeOrthographic(left, right, top, bottom, camera.near, camera.far)
-	camera.proj.matrixInverse = camera.proj.matrix.Invert()
-}
-
-// TODO(delay) ContainsBox implements Camera ContainsBox method
-func (camera *OrthographicCamera) ContainsBox(proj, view core.Matrix4, min, max core.Vector3) bool {
-	return true
+	camera.projectionMatrixChanged()
 }

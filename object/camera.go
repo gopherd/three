@@ -16,6 +16,7 @@ const (
 // Camera represents a camera object
 type Camera interface {
 	Object
+
 	CameraType() CameraType
 	Projection() core.Matrix4
 	SetViewOffset(fullWidth, fullHeight, x, y, width, height core.Float)
@@ -30,6 +31,7 @@ type cameraImpl struct {
 	proj               struct {
 		matrix        core.Matrix4
 		matrixInverse core.Matrix4
+		frustum       geometry.Frustum
 		view          struct {
 			enabled               bool
 			fullWidth, fullHeight core.Float
@@ -51,14 +53,7 @@ func (camera *cameraImpl) Bounds() geometry.Box3 {
 func (camera *cameraImpl) Render(renderer renderer.Renderer, proj, view, transform core.Matrix4) {
 }
 
-func (camera *cameraImpl) isProjectionNeedsUpdate() bool {
-	return !camera.proj.notNeedsUpdate
-}
-
-func (camera *cameraImpl) setProjectionNeedsUpdate(needsUpdate bool) {
-	camera.proj.notNeedsUpdate = !needsUpdate
-}
-
+// SetViewOffset implements Camera SetViewOffset method
 func (camera *cameraImpl) SetViewOffset(fullWidth, fullHeight, x, y, width, height core.Float) {
 	camera.proj.view.enabled = true
 	camera.proj.view.fullWidth = fullWidth
@@ -68,4 +63,28 @@ func (camera *cameraImpl) SetViewOffset(fullWidth, fullHeight, x, y, width, heig
 	camera.proj.view.width = width
 	camera.proj.view.height = height
 	camera.setProjectionNeedsUpdate(true)
+}
+
+// IntersectsBox implements Camera IntersectsBox method
+func (camera *cameraImpl) IntersectsBox(box geometry.Box3) bool {
+	return camera.proj.frustum.IntersectsBox(box)
+}
+
+// ContainsPoint implements Camera ContainsPoint method
+func (camera *cameraImpl) ContainsPoint(point core.Vector3) bool {
+	return camera.proj.frustum.ContainsPoint(point)
+}
+
+func (camera *cameraImpl) isProjectionNeedsUpdate() bool {
+	return !camera.proj.notNeedsUpdate
+}
+
+func (camera *cameraImpl) setProjectionNeedsUpdate(needsUpdate bool) {
+	camera.proj.notNeedsUpdate = !needsUpdate
+}
+
+func (camera *cameraImpl) projectionMatrixChanged() {
+	camera.setProjectionNeedsUpdate(false)
+	camera.proj.matrixInverse = camera.proj.matrix.Invert()
+	camera.proj.frustum.SetFromProjectionMatrix(camera.proj.matrix)
 }

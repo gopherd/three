@@ -5,7 +5,6 @@ import (
 
 	"github.com/gopherd/doge/math/mathutil"
 	"github.com/gopherd/three/core"
-	"github.com/gopherd/three/geometry"
 )
 
 // PerspectiveCamera represents a perspective camera
@@ -32,30 +31,23 @@ func NewPerspectiveCamera(fov, aspect, near, far core.Float) *PerspectiveCamera 
 	return camera
 }
 
-// IsPerspectiveCamera implements Camera IsPerspectiveCamera method
+// CameraType implements Camera CameraType method
 func (camera *PerspectiveCamera) CameraType() CameraType {
 	return PerspectiveCameraType
 }
 
-// TODO(delay) IntersectsBox implements Camera IntersectsBox method
-func (camera *PerspectiveCamera) IntersectsBox(box geometry.Box3) bool {
-	return true
-}
-
-// TODO(delay) ContainsPoint implements Camera ContainsPoint method
-func (camera *PerspectiveCamera) ContainsPoint(point core.Vector3) bool {
-	return true
-}
-
 // Projection implements Camera Projection method
 func (camera *PerspectiveCamera) Projection() core.Matrix4 {
-	if camera.isProjectionNeedsUpdate() {
-		camera.updateProjectionMatrix()
-	}
+	camera.tryUpdateProjectionMatrix()
 	return camera.proj.matrix
 }
 
-// updateProjectionMatrix try updates projection matrix
+func (camera *PerspectiveCamera) tryUpdateProjectionMatrix() {
+	if camera.isProjectionNeedsUpdate() {
+		camera.updateProjectionMatrix()
+	}
+}
+
 func (camera *PerspectiveCamera) updateProjectionMatrix() {
 	camera.setProjectionNeedsUpdate(false)
 	var near = camera.near
@@ -78,7 +70,7 @@ func (camera *PerspectiveCamera) updateProjectionMatrix() {
 	}
 
 	camera.proj.matrix.MakePerspective(left, left+width, top, top-height, near, camera.far)
-	camera.proj.matrixInverse = camera.proj.matrix.Invert()
+	camera.projectionMatrixChanged()
 }
 
 // see {@link http://www.bobatkins.com/photography/technical/field_of_view.html}
