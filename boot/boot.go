@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"sync/atomic"
 
-	"github.com/gopherd/doge/query"
+	"github.com/gopherd/doge/operator"
 	"github.com/gopherd/three/driver/renderer"
 	"github.com/gopherd/three/driver/window"
 )
@@ -33,11 +33,11 @@ type Options struct {
 }
 
 func (options *Options) init() {
-	options.Title = query.Or(options.Title, "Title")
-	options.Width = query.Or(options.Width, 800)
-	options.Height = query.Or(options.Height, 600)
-	options.Window = query.OrNew(options.Window, window.GLFWindow)
-	options.Renderer = query.OrNew(options.Renderer, renderer.OpenGLRenderer)
+	options.Title = operator.Or(options.Title, "Title")
+	options.Width = operator.Or(options.Width, 800)
+	options.Height = operator.Or(options.Height, 600)
+	options.Window = operator.OrNew(options.Window, window.GLFWindow)
+	options.Renderer = operator.OrNew(options.Renderer, renderer.OpenGLRenderer)
 }
 
 func Run(app Application, options Options) {

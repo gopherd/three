@@ -7,6 +7,8 @@ import (
 	"github.com/gopherd/three/core/event"
 	"github.com/gopherd/three/driver/renderer"
 	"github.com/gopherd/three/driver/renderer/shader"
+	"github.com/gopherd/three/geometry"
+	"github.com/gopherd/three/material"
 )
 
 var nextObjectUUID int64
@@ -22,15 +24,15 @@ type Object interface {
 	SetTag(tag string) // SetTag sets tag of Object
 	Parent() Object    // Parent returns parent of Object
 
-	Visible() bool                            // Visible reports whether the object is visible
-	Bounds() (min, max core.Vector3, ok bool) // Bounds returns object bounding box
-	Transform() core.Matrix4                  // Transform returns transform matrix in local space
-	WorldTransform() core.Matrix4             // WorldTransform returns transform matrix in world space
-	LocalToWorld(core.Vector3) core.Vector3   // LocalToWorld Converts the vector from this object's local space to world space
-	LookAt(core.Vector3)                      // LookAt looks at a position in world space
+	Visible() bool                          // Visible reports whether the object is visible
+	Bounds() geometry.Box3                  // Bounds returns object bounding box
+	Transform() core.Matrix4                // Transform returns transform matrix in local space
+	TransformWorld() core.Matrix4           // TransformWorld returns transform matrix in world space
+	LocalToWorld(core.Vector3) core.Vector3 // LocalToWorld Converts the vector from this object's local space to world space
+	LookAt(core.Vector3)                    // LookAt looks at a position in world space
 
-	// Render renders the Object to `renderer' with specified tranform
-	Render(renderer renderer.Renderer, cameraTransform, transform core.Matrix4)
+	// Render renders the Object to `renderer' with specified matrices
+	Render(renderer renderer.Renderer, proj, view, transform core.Matrix4)
 }
 
 type node interface {
@@ -193,7 +195,18 @@ type object3d struct {
 		fail    bool
 	}
 	visible   bool
-	transform core.Matrix4
+	transform struct {
+		position       core.Vector3
+		scale          core.Vector3
+		rotation       core.Euler
+		quaternion     core.Vector4
+		matrix         core.Matrix4
+		notNeedsUpdate bool
+	}
+	transformWorld struct {
+		matrix         core.Matrix4
+		notNeedsUpdate bool
+	}
 }
 
 // Init initializes Object
@@ -233,20 +246,56 @@ func (obj *object3d) SetVisible(visible bool) {
 
 // Transform implements Object Transform method
 func (obj *object3d) Transform() core.Matrix4 {
-	return obj.transform
+	return obj.transform.matrix
 }
 
-// WorldTransform implements Object WorldTransform method
-func (obj *object3d) WorldTransform() core.Matrix4 {
+// TransformWorld implements Object TransformWorld method
+func (obj *object3d) TransformWorld() core.Matrix4 {
 	if obj.parent == nil {
-		return obj.transform
+		return obj.transform.matrix
 	}
-	return obj.parent.WorldTransform().Dot(obj.transform)
+	return obj.parent.TransformWorld().Dot(obj.transform.matrix)
+}
+
+func (obj object3d) GetPosition() core.Vector3 {
+	return obj.transform.position
+}
+
+func (obj *object3d) SetPosition(pos core.Vector3) {
+	obj.transform.position = pos
+	obj.transform.notNeedsUpdate = false
+}
+
+func (obj object3d) GetScale() core.Vector3 {
+	return obj.transform.scale
+}
+
+func (obj *object3d) SetScale(scale core.Vector3) {
+	obj.transform.scale = scale
+	obj.transform.notNeedsUpdate = false
+}
+
+func (obj object3d) GetRotation() core.Euler {
+	return obj.transform.rotation
+}
+
+func (obj *object3d) SetRotation(euler core.Euler) {
+	obj.transform.rotation = euler
+	obj.transform.notNeedsUpdate = false
+}
+
+func (obj object3d) GetQuaternion() core.Vector4 {
+	return obj.transform.quaternion
+}
+
+func (obj *object3d) SetQuaternion(quaternion core.Vector4) {
+	obj.transform.quaternion = quaternion
+	obj.transform.notNeedsUpdate = false
 }
 
 // LocalToWorld implements Object LocalToWorld method
 func (obj *object3d) LocalToWorld(vec core.Vector3) core.Vector3 {
-	return obj.WorldTransform().DotVec3(vec)
+	return obj.TransformWorld().DotVec3(vec)
 }
 
 // TODO: LookAt implements Object LookAt method
@@ -265,9 +314,38 @@ func (obj *object3d) createProgram(renderer renderer.Renderer, shader shader.Sha
 }
 
 // Render implements Object Render method
-func (obj *object3d) Render(renderer renderer.Renderer, camera, transform core.Matrix4) {
-	renderer.SetUniform(obj.program.Id, "view", camera)
+func (obj *object3d) Render(renderer renderer.Renderer, proj, view, transform core.Matrix4) {
+	renderer.SetUniform(obj.program.Id, "proj", proj)
+	renderer.SetUniform(obj.program.Id, "view", view)
 	renderer.SetUniform(obj.program.Id, "transform", transform)
+}
+
+func (obj *object3d) renderGeometry(
+	renderer renderer.Renderer,
+	geometry geometry.Geometry,
+	material material.Material,
+) {
+	var shader = material.Shader()
+	if !obj.program.created && !obj.program.fail {
+		if err := obj.createProgram(renderer, shader); err != nil {
+			panic(err)
+		}
+	}
+	var needsUpdate = material.NeedsUpdate()
+	if needsUpdate {
+		material.SetNeedsUpdate(false)
+		for name, uniform := range shader.Uniforms {
+			renderer.SetUniform(obj.program.Id, name, uniform)
+		}
+	}
+
+	var attributes = geometry.Attributes()
+	var index = geometry.Index()
+	if geometry.NeedsUpdate() {
+		geometry.SetNeedsUpdate(false)
+		// TODO: update attributes
+	}
+	_, _ = attributes, index
 }
 
 // Attatch attatchs child to parent object
@@ -279,37 +357,37 @@ func Attatch(parent, child Object) {
 func recursivelyRenderObject(
 	renderer renderer.Renderer,
 	camera Camera,
-	cameraTransform core.Matrix4,
+	proj, view core.Matrix4,
 	object Object,
-	objectTransform core.Matrix4,
+	transform core.Matrix4,
 ) {
-	renderObject(renderer, camera, cameraTransform, object, objectTransform)
+	renderObject(renderer, camera, proj, view, object, transform)
 	for i, n := 0, object.NumChild(); i < n; i++ {
 		child := object.GetChildByIndex(i)
 		if !child.Visible() {
 			continue
 		}
-		childTransform := objectTransform.Dot(child.Transform())
-		recursivelyRenderObject(renderer, camera, cameraTransform, child, childTransform)
+		childTransform := transform.Dot(child.Transform())
+		recursivelyRenderObject(renderer, camera, proj, view, child, childTransform)
 	}
 }
 
 func renderObject(
 	renderer renderer.Renderer,
 	camera Camera,
-	cameraTransform core.Matrix4,
+	proj, view core.Matrix4,
 	object Object,
-	objectTransform core.Matrix4,
+	transform core.Matrix4,
 ) {
-	min, max, ok := object.Bounds()
-	if ok {
-		min = objectTransform.DotVec3(min)
-		max = objectTransform.DotVec3(max)
-		if !camera.ContainsBox(cameraTransform, min, max) {
+	box := object.Bounds()
+	if !box.IsEmpty() {
+		box.Min = transform.DotVec3(box.Min)
+		box.Max = transform.DotVec3(box.Max)
+		if !camera.IntersectsBox(box) {
 			return
 		}
 	}
-	object.Render(renderer, cameraTransform, objectTransform)
+	object.Render(renderer, proj, view, transform)
 }
 
 func recursivelyUpdateNode(node node) {

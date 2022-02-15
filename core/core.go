@@ -12,6 +12,7 @@ type Vector2 = tensor.Vector2[Float]
 type Vector3 = tensor.Vector3[Float]
 type Vector4 = tensor.Vector4[Float]
 type Matrix4 = tensor.Matrix4[Float]
+type Euler = tensor.Euler[Float]
 
 func Vec2(x, y Float) Vector2       { return tensor.Vec2(x, y) }
 func Vec3(x, y, z Float) Vector3    { return tensor.Vec3(x, y, z) }

@@ -5,7 +5,7 @@ import (
 	"github.com/gopherd/three/driver/renderer"
 )
 
-// A Scene represents a root node should be rendered
+// Scene represents a scene graph should be rendered
 type Scene interface {
 	node
 
@@ -45,14 +45,15 @@ func (scene *BasicScene) Add(object Object) {
 
 // Render implements Scene Render method
 func (scene *BasicScene) Render(renderer renderer.Renderer, camera Camera) {
+	var proj = camera.Projection()
+	var view = camera.TransformWorld()
 	var background = scene.background
 	renderer.ClearColor(background.X(), background.Y(), background.Z(), background.W())
-	var cameraTransform = camera.WorldTransform()
 	for _, child := range scene.children {
 		if !child.Visible() {
 			continue
 		}
-		recursivelyRenderObject(renderer, camera, cameraTransform, child, child.Transform())
+		recursivelyRenderObject(renderer, camera, proj, view, child, child.Transform())
 	}
 }
 

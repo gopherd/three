@@ -17,41 +17,19 @@ type Mesh struct {
 
 func NewMesh(geometry geometry.Geometry, material material.Material) *Mesh {
 	var mesh = new(Mesh)
-	mesh.Init()
 	mesh.geometry = geometry
 	mesh.material = material
+	mesh.Init()
 	return mesh
 }
 
 // Bounds implements Object Bounds method
-func (mesh *Mesh) Bounds() (min, max core.Vector3, ok bool) {
-	min, max = mesh.geometry.Bounds()
-	return min, max, min != max
+func (mesh *Mesh) Bounds() geometry.Box3 {
+	return mesh.geometry.Bounds()
 }
 
 // Render implements Object Render method
-func (mesh *Mesh) Render(renderer renderer.Renderer, cameraTransform, transform core.Matrix4) {
-	mesh.object3d.Render(renderer, cameraTransform, transform)
-
-	var shader = mesh.material.Shader()
-	if !mesh.object3d.program.created && !mesh.object3d.program.fail {
-		if err := mesh.object3d.createProgram(renderer, shader); err != nil {
-			panic(err)
-		}
-	}
-	var needsUpdate = mesh.material.NeedsUpdate()
-	if needsUpdate {
-		mesh.material.SetNeedsUpdate(false)
-		for name, uniform := range shader.Uniforms {
-			renderer.SetUniform(mesh.object3d.program.Id, name, uniform)
-		}
-	}
-
-	var attributes = mesh.geometry.Attributes()
-	var index = mesh.geometry.Index()
-	if mesh.geometry.NeedsUpdate() {
-		mesh.geometry.SetNeedsUpdate(false)
-		// TODO: update attributes
-	}
-	_, _ = attributes, index
+func (mesh *Mesh) Render(renderer renderer.Renderer, proj, view, transform core.Matrix4) {
+	mesh.object3d.Render(renderer, proj, view, transform)
+	mesh.object3d.renderGeometry(renderer, mesh.geometry, mesh.material)
 }

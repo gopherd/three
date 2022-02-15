@@ -1,18 +1,29 @@
 package geometry
 
-import "constraints"
+import (
+	"constraints"
+)
 
 type Attribute interface {
 	Count() int
 	Stride() int
-	GetFloat32(offset int) float32
-	GetFloat64(offset int) float64
+	NeedsUpdate() bool
+	SetNeedsUpdate(bool)
+	Int8(offset int) int8
+	Int16(offset int) int16
+	Int32(offset int) int32
+	Uint8(offset int) uint8
+	Uint16(offset int) uint16
+	Uint32(offset int) uint32
+	Float32(offset int) float32
+	Float64(offset int) float64
 }
 
 type BufferAttribute[T constraints.Integer | constraints.Float] struct {
-	data   []T
-	count  int
-	stride int
+	data           []T
+	count          int
+	stride         int
+	notNeedsUpdate bool
 }
 
 func NewBufferAttribute[T constraints.Integer | constraints.Float](count, stride int) *BufferAttribute[T] {
@@ -23,36 +34,76 @@ func NewBufferAttribute[T constraints.Integer | constraints.Float](count, stride
 	}
 }
 
-func (attribute *BufferAttribute[T]) GetFloat32(offset int) float32 {
-	return float32(attribute.data[offset])
-}
-
-func (attribute *BufferAttribute[T]) GetFloat64(offset int) float64 {
-	return float64(attribute.data[offset])
-}
-
-func (attribute *BufferAttribute[T]) Count() int {
+func (attribute BufferAttribute[T]) Count() int {
 	return attribute.count
 }
 
-func (attribute *BufferAttribute[T]) Stride() int {
+func (attribute BufferAttribute[T]) Stride() int {
 	return attribute.stride
 }
 
-func (attribute *BufferAttribute[T]) GetX(index int) T {
+func (attribute *BufferAttribute[T]) NeedsUpdate() bool {
+	return !attribute.notNeedsUpdate
+}
+
+func (attribute *BufferAttribute[T]) SetNeedsUpdate(needsUpdate bool) {
+	attribute.notNeedsUpdate = !needsUpdate
+}
+
+func (attribute BufferAttribute[T]) Int8(offset int) int8 {
+	return int8(attribute.data[offset])
+}
+
+func (attribute BufferAttribute[T]) Int16(offset int) int16 {
+	return int16(attribute.data[offset])
+}
+
+func (attribute BufferAttribute[T]) Int32(offset int) int32 {
+	return int32(attribute.data[offset])
+}
+
+func (attribute BufferAttribute[T]) Uint8(offset int) uint8 {
+	return uint8(attribute.data[offset])
+}
+
+func (attribute BufferAttribute[T]) Uint16(offset int) uint16 {
+	return uint16(attribute.data[offset])
+}
+
+func (attribute BufferAttribute[T]) Uint32(offset int) uint32 {
+	return uint32(attribute.data[offset])
+}
+
+func (attribute BufferAttribute[T]) Float32(offset int) float32 {
+	return float32(attribute.data[offset])
+}
+
+func (attribute BufferAttribute[T]) Float64(offset int) float64 {
+	return float64(attribute.data[offset])
+}
+
+func (attribute BufferAttribute[T]) Get(offset int) T {
+	return attribute.data[offset]
+}
+
+func (attribute BufferAttribute[T]) GetX(index int) T {
 	return attribute.data[index*attribute.stride]
 }
 
-func (attribute *BufferAttribute[T]) GetY(index int) T {
+func (attribute BufferAttribute[T]) GetY(index int) T {
 	return attribute.data[index*attribute.stride+1]
 }
 
-func (attribute *BufferAttribute[T]) GetZ(index int) T {
+func (attribute BufferAttribute[T]) GetZ(index int) T {
 	return attribute.data[index*attribute.stride+2]
 }
 
-func (attribute *BufferAttribute[T]) GetW(index int) T {
+func (attribute BufferAttribute[T]) GetW(index int) T {
 	return attribute.data[index*attribute.stride+3]
+}
+
+func (attribute *BufferAttribute[T]) Set(offset int, value T) {
+	attribute.data[offset] = value
 }
 
 func (attribute *BufferAttribute[T]) SetX(index int, x T) {
