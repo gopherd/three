@@ -23,6 +23,10 @@ func NewMesh(geometry geometry.Geometry, material material.Material) *Mesh {
 	return mesh
 }
 
+func (mesh *Mesh) ToString() string {
+	return "Mesh.ToString:TODO"
+}
+
 // Bounds implements Object Bounds method
 func (mesh *Mesh) Bounds() geometry.Box3 {
 	return mesh.geometry.Bounds()

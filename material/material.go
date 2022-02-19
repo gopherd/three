@@ -14,7 +14,7 @@ type Options struct {
 	Side         FaceSide
 	Transparent  bool
 	Opacity      float32
-	VertexColors float32
+	VertexColors bool
 }
 
 type Material interface {

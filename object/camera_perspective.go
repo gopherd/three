@@ -31,6 +31,10 @@ func NewPerspectiveCamera(fov, aspect, near, far core.Float) *PerspectiveCamera 
 	return camera
 }
 
+func (camera *PerspectiveCamera) ToString() string {
+	return "PerspectiveCamera"
+}
+
 // CameraType implements Camera CameraType method
 func (camera *PerspectiveCamera) CameraType() CameraType {
 	return PerspectiveCameraType

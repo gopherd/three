@@ -1,6 +1,8 @@
 package geometry
 
 import (
+	"fmt"
+
 	"github.com/gopherd/doge/math/mathutil"
 
 	"github.com/gopherd/three/core"
@@ -15,6 +17,14 @@ func (box Box3) Size() core.Vector3   { return box.Max.Sub(box.Min) }
 
 func (box Box3) IsEmpty() bool {
 	return box.Max.X() < box.Min.X() || box.Max.Y() < box.Min.Y() || box.Max.Z() < box.Min.Z()
+}
+
+func (box Box3) String() string {
+	return fmt.Sprintf(
+		"{(%f,%f,%f),(%f,%f,%f)}",
+		box.Min.X(), box.Min.Y(), box.Min.Z(),
+		box.Max.X(), box.Max.Y(), box.Max.Z(),
+	)
 }
 
 func (box Box3) ContainsPoint(point core.Vector3) bool {

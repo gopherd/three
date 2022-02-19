@@ -1,5 +1,10 @@
 package geometry
 
+import (
+	"github.com/gopherd/doge/operator"
+	"github.com/gopherd/three/core"
+)
+
 type Range struct {
 	Start int
 	End   int
@@ -41,6 +46,12 @@ type BufferGeometry struct {
 	notNeedsUpdate bool
 }
 
+func NewBufferGeometry() *BufferGeometry {
+	return &BufferGeometry{
+		attributes: make(map[string]Attribute),
+	}
+}
+
 func (geo *BufferGeometry) Index() *Uint32Attribute {
 	return geo.indices
 }
@@ -63,6 +74,38 @@ func (geo *BufferGeometry) SetAttribute(name string, attribute Attribute) {
 
 func (geo *BufferGeometry) Bounds() Box3 {
 	return geo.bounds
+}
+
+func (geo *BufferGeometry) ComputeBounds() bool {
+	var positions, ok = geo.attributes[AttributePosition]
+	if !ok {
+		return false
+	}
+	var count = positions.Count()
+	var stride = positions.Stride()
+	if stride < 2 || stride > 3 {
+		return false
+	}
+	var xmin, ymin, zmin core.Float
+	var xmax, ymax, zmax core.Float
+	for i := 0; i < count; i++ {
+		var offset = i * stride
+		var x, y, z core.Float
+		x = positions.Float(offset)
+		y = positions.Float(offset + 1)
+		if stride == 3 {
+			z = positions.Float(offset + 2)
+		}
+		xmin = operator.If(i == 0 || x < xmin, x, xmin)
+		ymin = operator.If(i == 0 || y < ymin, y, ymin)
+		zmin = operator.If(i == 0 || z < zmin, z, zmin)
+		xmax = operator.If(i == 0 || x > xmax, x, xmax)
+		ymax = operator.If(i == 0 || y > ymax, y, ymax)
+		zmax = operator.If(i == 0 || z > zmax, z, zmax)
+	}
+	geo.bounds.Min = core.Vec3(xmin, ymin, zmin)
+	geo.bounds.Max = core.Vec3(xmax, ymax, zmax)
+	return true
 }
 
 func (geo *BufferGeometry) DrawRange() Range {

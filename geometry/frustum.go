@@ -38,9 +38,9 @@ func (frustum Frustum) IntersectsSphere(sphere Sphere3) bool {
 
 func (frustum Frustum) IntersectsBox(box Box3) bool {
 	for i := range frustum {
-		var x = operator.Conditional(frustum[i].Normal.X() > 0, box.Max.X(), box.Min.X())
-		var y = operator.Conditional(frustum[i].Normal.Y() > 0, box.Max.Y(), box.Min.Y())
-		var z = operator.Conditional(frustum[i].Normal.Z() > 0, box.Max.Z(), box.Min.Z())
+		var x = operator.If(frustum[i].Normal.X() > 0, box.Max.X(), box.Min.X())
+		var y = operator.If(frustum[i].Normal.Y() > 0, box.Max.Y(), box.Min.Y())
+		var z = operator.If(frustum[i].Normal.Z() > 0, box.Max.Z(), box.Min.Z())
 		if frustum[i].DistanceToPoint(core.Vec3(x, y, z)) < 0 {
 			return false
 		}

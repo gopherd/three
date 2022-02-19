@@ -1,7 +1,14 @@
 package geometry
 
 import (
-	"constraints"
+	"github.com/gopherd/doge/constraints"
+
+	"github.com/gopherd/three/core"
+)
+
+const (
+	AttributePosition = "position"
+	AttributeColor    = "color"
 )
 
 type Attribute interface {
@@ -15,18 +22,19 @@ type Attribute interface {
 	Uint8(offset int) uint8
 	Uint16(offset int) uint16
 	Uint32(offset int) uint32
+	Float(offset int) core.Float
 	Float32(offset int) float32
 	Float64(offset int) float64
 }
 
-type BufferAttribute[T constraints.Integer | constraints.Float] struct {
+type BufferAttribute[T constraints.Real] struct {
 	data           []T
 	count          int
 	stride         int
 	notNeedsUpdate bool
 }
 
-func NewBufferAttribute[T constraints.Integer | constraints.Float](count, stride int) *BufferAttribute[T] {
+func NewBufferAttribute[T constraints.Real](count, stride int) *BufferAttribute[T] {
 	return &BufferAttribute[T]{
 		data:   make([]T, count*stride),
 		count:  count,
@@ -72,6 +80,10 @@ func (attribute BufferAttribute[T]) Uint16(offset int) uint16 {
 
 func (attribute BufferAttribute[T]) Uint32(offset int) uint32 {
 	return uint32(attribute.data[offset])
+}
+
+func (attribute BufferAttribute[T]) Float(offset int) core.Float {
+	return core.Float(attribute.data[offset])
 }
 
 func (attribute BufferAttribute[T]) Float32(offset int) float32 {
@@ -149,6 +161,7 @@ type Int32Attribute = BufferAttribute[int32]
 type Uint8Attribute = BufferAttribute[uint8]
 type Uint16Attribute = BufferAttribute[uint16]
 type Uint32Attribute = BufferAttribute[uint32]
+type FloatAttribute = BufferAttribute[core.Float]
 type Float32Attribute = BufferAttribute[float32]
 type Float64Attribute = BufferAttribute[float64]
 
@@ -174,6 +187,10 @@ func NewUint16Attribute(count, stride int) *Uint16Attribute {
 
 func NewUint32Attribute(count, stride int) *Uint32Attribute {
 	return NewBufferAttribute[uint32](count, stride)
+}
+
+func NewFloatAttribute(count, stride int) *FloatAttribute {
+	return NewBufferAttribute[core.Float](count, stride)
 }
 
 func NewFloat32Attribute(count, stride int) *Float32Attribute {

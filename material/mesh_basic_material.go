@@ -12,6 +12,13 @@ type MeshBasicMaterial struct {
 	shader     shader.Shader
 }
 
+func NewMeshBasicMaterial(paramters MeshBasicMaterialParameters) *MeshBasicMaterial {
+	m := &MeshBasicMaterial{
+		parameters: paramters,
+	}
+	return m
+}
+
 func (m *MeshBasicMaterial) Parameters() *MeshBasicMaterialParameters {
 	return &m.parameters
 }

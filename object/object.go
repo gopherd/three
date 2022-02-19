@@ -1,8 +1,10 @@
 package object
 
 import (
+	"bytes"
 	"sync/atomic"
 
+	"github.com/gopherd/doge/container"
 	"github.com/gopherd/three/core"
 	"github.com/gopherd/three/core/event"
 	"github.com/gopherd/three/driver/renderer"
@@ -16,13 +18,11 @@ var nextObjectUUID int64
 // Object reprensents object in scene
 type Object interface {
 	node
-	setParent(parent Object)
 
 	Type() string      // Type returns type of Object
 	UUID() int64       // UUID returns UUID of Object
 	Tag() string       // Tag returns tag of Object
 	SetTag(tag string) // SetTag sets tag of Object
-	Parent() Object    // Parent returns parent of Object
 
 	Visible() bool                          // Visible reports whether the object is visible
 	Bounds() geometry.Box3                  // Bounds returns object bounding box
@@ -36,29 +36,48 @@ type Object interface {
 }
 
 type node interface {
-	addChild(child Object)
+	container.Node[Object]
 
-	DispatchEvent(event.Event) bool
+	addChild(child Object)
+	setParent(parent Object)
 
 	RemoveChild(child Object) bool     // RemoveChild removes child object
 	RemoveChildByIndex(i int)          // RemoveChildByIndex removes ith child object
 	RemoveChildByTag(tag string) bool  // RemoveChildByTag removes child object by tag
 	RemoveChildByUUID(uuid int64) bool // RemoveChildByUUID removes child object by uuid
 
-	NumChild() int                    // NumChild returns number of children
-	GetChildByIndex(i int) Object     // GetChildByIndex returns child object by index
 	GetChildByTag(tag string) Object  // GetChildByTag retrieves child object by tag
 	GetChildByUUID(uuid int64) Object // GetChildByUUID retrieves child object by uuid
 
+	DispatchEvent(event.Event) bool
 	OnUpdate()
 }
 
 type node3d struct {
 	event.Dispatcher
 
+	parent   Object
 	children []Object
 	byUUID   map[int64]int
 	byTag    map[string]int
+}
+
+// Parent implements node container.Node Parent method
+func (node *node3d) Parent() Object { return node.parent }
+
+// NumChild implements container.Node NumChild method
+func (node *node3d) NumChild() int {
+	return len(node.children)
+}
+
+// GetChildByIndex implements container.Node GetChildByIndex method
+func (node *node3d) GetChildByIndex(i int) Object {
+	return node.children[i]
+}
+
+// setParent implements Object unexported setParent method
+func (node *node3d) setParent(parent Object) {
+	node.parent = parent
 }
 
 // addChild implements Object unexported addChild method
@@ -147,16 +166,6 @@ func (node *node3d) RemoveChildByUUID(uuid int64) bool {
 	return true
 }
 
-// NumChild implements Object NumChild method
-func (node *node3d) NumChild() int {
-	return len(node.children)
-}
-
-// GetChildByIndex implements Object GetChildByIndex method
-func (node *node3d) GetChildByIndex(i int) Object {
-	return node.children[i]
-}
-
 // GetChildByTag implements Object GetChildByTag method
 func (node *node3d) GetChildByTag(tag string) Object {
 	if node.byTag == nil || tag == "" {
@@ -186,7 +195,6 @@ func (node *node3d) OnUpdate() {}
 
 type object3d struct {
 	node3d
-	parent  Object
 	uuid    int64
 	tag     string
 	program struct {
@@ -194,7 +202,7 @@ type object3d struct {
 		created bool
 		fail    bool
 	}
-	visible   bool
+	invisible bool
 	transform struct {
 		position       core.Vector3
 		scale          core.Vector3
@@ -212,6 +220,15 @@ type object3d struct {
 // Init initializes Object
 func (obj *object3d) Init() {
 	obj.uuid = atomic.AddInt64(&nextObjectUUID, 1)
+	obj.transform.matrix.MakeIdentity()
+	obj.transformWorld.matrix.MakeIdentity()
+	// TODO: update position, scale, rotation, quaternion
+}
+
+func (obj *object3d) ToString() string {
+	var buf bytes.Buffer
+	// TODO: write obect information
+	return buf.String()
 }
 
 // Type implements Object Type method
@@ -226,22 +243,14 @@ func (obj *object3d) Tag() string { return obj.tag }
 // SetTag implements Object SetTag method
 func (obj *object3d) SetTag(tag string) { obj.tag = tag }
 
-// Parent implements Object Parent method
-func (obj *object3d) Parent() Object { return obj.parent }
-
-// setParent implements Object unexported setParent method
-func (obj *object3d) setParent(parent Object) {
-	obj.parent = parent
-}
-
 // Visible implements Object Visible method
 func (obj *object3d) Visible() bool {
-	return obj.visible
+	return !obj.invisible
 }
 
 // SetVisible sets object visible property
 func (obj *object3d) SetVisible(visible bool) {
-	obj.visible = visible
+	obj.invisible = !visible
 }
 
 // Transform implements Object Transform method
@@ -395,4 +404,12 @@ func recursivelyUpdateNode(node node) {
 	for i, n := 0, node.NumChild(); i < n; i++ {
 		recursivelyUpdateNode(node.GetChildByIndex(i))
 	}
+}
+
+func Stringify(node node) string {
+	return StringifyOptions(node, container.StringifyOptions{})
+}
+
+func StringifyOptions(node node, options container.StringifyOptions) string {
+	return container.Stringify[Object](node, options)
 }

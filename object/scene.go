@@ -33,6 +33,10 @@ type BasicScene struct {
 	background core.Vector4
 }
 
+func (scene *BasicScene) ToString() string {
+	return "Scene"
+}
+
 // SetBackground sets the scene background color
 func (scene *BasicScene) SetBackground(color core.Vector4) {
 	scene.background = color
