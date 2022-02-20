@@ -40,7 +40,7 @@ func NewScene() *Scene {
 	scene.mesh = scene.createMesh()
 	scene.Add(scene.mesh)
 
-	print(object.Stringify(scene))
+	print(object.Stringify(scene, nil))
 
 	return scene
 }

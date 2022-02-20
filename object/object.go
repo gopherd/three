@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/gopherd/doge/container"
+	"github.com/gopherd/doge/container/stringify"
 	"github.com/gopherd/three/core"
 	"github.com/gopherd/three/core/event"
 	"github.com/gopherd/three/driver/renderer"
@@ -225,7 +226,7 @@ func (obj *object3d) Init() {
 	// TODO: update position, scale, rotation, quaternion
 }
 
-func (obj *object3d) ToString() string {
+func (obj *object3d) String() string {
 	var buf bytes.Buffer
 	// TODO: write obect information
 	return buf.String()
@@ -406,10 +407,6 @@ func recursivelyUpdateNode(node node) {
 	}
 }
 
-func Stringify(node node) string {
-	return StringifyOptions(node, container.StringifyOptions{})
-}
-
-func StringifyOptions(node node, options container.StringifyOptions) string {
-	return container.Stringify[Object](node, options)
+func Stringify(node node, options *stringify.Options) string {
+	return stringify.Stringify[Object](node, options)
 }

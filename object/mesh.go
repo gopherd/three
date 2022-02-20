@@ -23,8 +23,8 @@ func NewMesh(geometry geometry.Geometry, material material.Material) *Mesh {
 	return mesh
 }
 
-func (mesh *Mesh) ToString() string {
-	return "Mesh.ToString:TODO"
+func (mesh *Mesh) String() string {
+	return "Mesh.String:TODO"
 }
 
 // Bounds implements Object Bounds method

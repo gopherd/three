@@ -28,8 +28,8 @@ func NewOrthographicCamera(left, right, top, bottom, near, far core.Float) *Orth
 	return camera
 }
 
-func (camera *OrthographicCamera) ToString() string {
-	return "OrthographicCamera.ToString:TODO"
+func (camera *OrthographicCamera) String() string {
+	return "OrthographicCamera.String:TODO"
 }
 
 // CameraType implements Camera CameraType method
